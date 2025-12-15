@@ -1,0 +1,33 @@
+name: "📌 General"
+description: "공통 이슈 템플릿"
+labels: []
+
+body:
+  - type: textarea
+    attributes:
+      label: 📄 설명
+      description: 이슈에 대한 간단한 설명을 작성해 주세요.
+      placeholder: 무엇을 해야 하는 이슈인지 작성해주세요.
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: ✅ 작업 내용
+      description: 필요한 작업을 체크박스 형태로 작성해 주세요.
+      placeholder: |
+        - [ ] 작업 1
+        - [ ] 작업 2
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: 🏷️ 관련 라벨
+      description: 해당 이슈에 적절한 라벨을 선택하거나 기재해 주세요.
+      placeholder: FEAT / FIX / REFACTOR / TEST / DOCS / RELEASE / CHORE
+
+  - type: textarea
+    attributes:
+      label: 🙋🏻 참고 사항
+      description: 참고 자료나 특이 사항이 있다면 작성해 주세요.
