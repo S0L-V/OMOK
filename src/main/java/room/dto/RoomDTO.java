@@ -2,13 +2,11 @@ package room.dto;
 
 import lombok.*;
 
-import java.util.UUID;
-
 @Getter @Setter
 @AllArgsConstructor @Builder
 public class RoomDTO {
-    private UUID id;
-    private UUID hostUserId;
+    private String id;
+    private String hostUserId;
     private String roomName;
     private String roomPwd;
     private int isPublic;     
