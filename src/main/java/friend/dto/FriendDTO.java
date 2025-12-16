@@ -1,6 +1,7 @@
 package friend.dto;
 
 import java.sql.Timestamp;
+import java.util.UUID;
 
 import lombok.Data;
 
