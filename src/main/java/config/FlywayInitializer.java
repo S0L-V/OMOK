@@ -9,21 +9,21 @@ import org.flywaydb.core.Flyway;
 @WebListener
 public class FlywayInitializer implements ServletContextListener {
 
-    @Override
-    public void contextInitialized(ServletContextEvent sce) {
-        Flyway flyway = Flyway.configure()
-                .dataSource(
-                        "jdbc:oracle:thin:@localhost:1521:xe",
-                        "omok",
-                        "omok1234"
-                )
-                .load();
+	@Override
+	public void contextInitialized(ServletContextEvent sce) {
+		Flyway flyway = Flyway.configure()
+			.dataSource(
+				"DB_URL",
+				"DB_NAME",
+				"DB_PWD")
+			.locations("classpath:db/migration")
+			.load();
 
-        flyway.migrate();
-    }
+		flyway.migrate();
+	}
 
-    @Override
-    public void contextDestroyed(ServletContextEvent sce) {
-        // nothing
-    }
+	@Override
+	public void contextDestroyed(ServletContextEvent sce) {
+		// nothing
+	}
 }
