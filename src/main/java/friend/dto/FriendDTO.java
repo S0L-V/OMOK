@@ -1,13 +1,14 @@
 package friend.dto;
 
 import java.sql.Timestamp;
-import java.util.UUID;
 
+import lombok.Builder;
 import lombok.Data;
 
 @Data
+@Builder
 public class FriendDTO {
-	
+
 	private String id; // PK
 	private String userId; // 친구 요청을 보낸 사람
 	private String fiendId; // 친구 요청을 받은 사람
