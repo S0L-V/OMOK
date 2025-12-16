@@ -1,4 +1,4 @@
-package game.dto;
+package record.dto;
 
 
 import java.sql.Timestamp;

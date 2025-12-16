@@ -1,4 +1,4 @@
-package game.dto;
+package record.dto;
 
 import java.sql.Timestamp;
 
@@ -6,7 +6,7 @@ import lombok.Data;
 
 @Data
 public class UserInfoDTO {
-	
+
 	private String userId;
 	private String nickname;
 	private Integer totalWin;
