@@ -13,6 +13,5 @@ public interface RoomDAO {
 		String roomName,
 		String roomPwd,
 		String isPublic,
-		String playType,
-		int totalUserCnt) throws Exception;
+		String playType) throws Exception;
 }

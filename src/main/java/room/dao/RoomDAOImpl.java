@@ -46,10 +46,11 @@ public class RoomDAOImpl implements RoomDAO {
 	}
 
 	@Override
-	public RoomDTO createRoom(String hostUserId, String roomName, String roomPwd, String isPublic, String playType,
-		int totalUserCnt) throws Exception {
+	public RoomDTO createRoom(String hostUserId, String roomName, String roomPwd, String isPublic, String playType)
+		throws Exception {
 
 		String id = Uuid.generate();
+		int totalUserCnt = playType.equals("0") ? 2 : 4;
 
 		String query = """
 			INSERT INTO room
