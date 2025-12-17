@@ -19,6 +19,6 @@ public class GameResultDTO {
 	private String userId; // 플레이어 ID
 	private String stoneColor; // 흑1 백2
 	private String gameResult; // W승 L패 D무
-	private String playerType; // 개인전1 팀전2
+	private String playType; // 개인전1 팀전2
 	private Timestamp finishedAt; // 게임 종료 시간
 }
