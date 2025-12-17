@@ -1,4 +1,4 @@
-branchName: '[${issue.labels[0].name}]-${issue.title}'
+branchName: '${issue.labels[0].name}-${issue.title}'
 branches:
   - label: CHORE
     skip: false
