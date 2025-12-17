@@ -8,7 +8,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArraySet;
 
 @ServerEndpoint("/ws/room/{roomId}")
-public class ChatServer {
+public class ChatServerWebSocket {
 
     // roomId -> sessions
     private static final ConcurrentHashMap<String, CopyOnWriteArraySet<Session>> rooms = new ConcurrentHashMap<>();
