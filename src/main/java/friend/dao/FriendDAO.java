@@ -1,62 +1,40 @@
 package friend.dao;
 
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.List;
 
 import friend.dto.FriendDTO;
 
-public class FriendDAO {
+public interface FriendDAO {
 
 	/**
-	 * 친구 요청을 생성 (status = PENDING)
-	 * @param userId 
-	 * @param friendId
-	 * @return insert 된 행 수 (성공시 1)
+	 * 친구 요청 생성(status = PENDING)
 	 */
-	public int insertFriendRequest(String userId, String friendId) throws SQLException {
-
-		return 1;
-	}
+	int createRequest(String requesterId, String receiverId) throws SQLException;
 
 	/**
-	 * 친구 요청을 수락 (PENDING -> ACCEPTED)
-	 * @param userId
-	 * @param friendId
-	 * @return 업데이트 된 행 수 (성공시 1)
+	 * 친구 요청 수락 (PENDING -> ACCEPTED)
 	 */
-	public int acceptFriendRequest(String userId, String friendId) throws SQLException {
-		return 1;
-	}
+	int acceptRequest(String requesterId, String receiverId) throws SQLException;
 
 	/**
-	 * 친구 관계를 삭제함
-	 * @param userId
-	 * @param friendId
-	 * @return 삭제된 행 수
+	 * 친구 관계 삭제 (요청/수락된 기록 제거)
 	 */
-	public int deleteFriend(String userId, String friendId) throws SQLException {
-		return 1;
-	}
+	int deleteRelation(String userId, String friendId) throws SQLException;
 
 	/**
-	 * 지정한 사용자의 친구 목록(ACCEPTED 상태)을 조회 (양방향)
-	 * @param userId 조회할 사용자 ID
-	 * @return 수락된 친구 관계 리스트
+	 * 지정한 사용자의 친구 목록(ACCEPTED 상태, 양방향 포함) 조회 
 	 */
-	public List<FriendDTO> findAcceptedFriendsByUserId(String userId) throws SQLException {
-		return new ArrayList<>();
-	}
+	List<FriendDTO> findAcceptedFriends(String userId) throws SQLException;
 
 	/**
-	 * 친구 관계의 상태를 변경
-	 * @param userId
-	 * @param friendId
-	 * @param status (PENDING, ACCEPTED, BLOCKED)
-	 * @return
+	 * 친구 상태 변경(PENDING, ACCEPTED, BLOCKED)
 	 */
-	public int updateFriendStatus(String userId, String friendId, String status) throws SQLException {
+	int updateStatus(String userId, String friendId, String status) throws SQLException;
 
-		return 1;
-	}
+	/**
+	 * 두 사용자간의 친구 관계 1건 조회 (없으면 null)
+	 */
+	FriendDTO findRelation(String userId, String friendId) throws SQLException;
+
 }
