@@ -13,9 +13,9 @@ public class FlywayInitializer implements ServletContextListener {
 	public void contextInitialized(ServletContextEvent sce) {
 		Flyway flyway = Flyway.configure()
 			.dataSource(
-				"jdbc:oracle:thin:@localhost:1521/XEPDB1",
-				"omok",
-				"omok123")
+				"DB_URL",
+				"DB_NAME",
+				"DB_PWD")
 			.locations("classpath:db/migration")
 			.load();
 
