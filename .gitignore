@@ -7,6 +7,7 @@
 /build/
 /bin/
 /target/
+/.apt_generated/
 
 ### Tomcat / Server ###
 Servers/
@@ -18,5 +19,6 @@ context.xml
 
 ### OS ###
 .DS_Store
+
+### ENV ###
 application.properties
-/.apt_generated/

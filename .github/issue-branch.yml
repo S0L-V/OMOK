@@ -1,0 +1,18 @@
+branchName: '${issue.labels[0].name}-${issue.title}'
+branches:
+  - label: CHORE
+    skip: false
+  - label: DOCS
+    skip: false
+  - label: FEAT
+    skip: false
+  - label: FIX
+    skip: false
+  - label: REFACTOR
+    skip: false
+  - label: RELEASE
+    skip: false
+  - label: TEST
+    skip: false
+  - label: '*'
+    prefix: '[MISC]-'
