@@ -1,14 +1,14 @@
 package login.config;
-
+/*
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 
 public class DbUtil {
 
-	private static final String URL = "jdbc:oracle:thin:@localhost:1521:xe";
-	private static final String USERNAME = "omok";
-	private static final String PASSWORD = "omok1234";
+	private static final String URL = "";
+	private static final String USERNAME = "";
+	private static final String PASSWORD = "";
 
 	static {
 		try {
@@ -22,3 +22,4 @@ public class DbUtil {
 		return DriverManager.getConnection(URL, USERNAME, PASSWORD);
 	}
 }
+*/
