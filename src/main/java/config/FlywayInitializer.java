@@ -11,11 +11,13 @@ public class FlywayInitializer implements ServletContextListener {
 
 	@Override
 	public void contextInitialized(ServletContextEvent sce) {
+
+		String url = AppConfig.get("DB_URL");
+		String user = AppConfig.get("DB_NAME");
+		String pwd = AppConfig.get("DB_PWD");
+
 		Flyway flyway = Flyway.configure()
-			.dataSource(
-				"DB_URL",
-				"DB_NAME",
-				"DB_PWD")
+			.dataSource(url, user, pwd)
 			.locations("classpath:db/migration")
 			.load();
 
@@ -24,6 +26,6 @@ public class FlywayInitializer implements ServletContextListener {
 
 	@Override
 	public void contextDestroyed(ServletContextEvent sce) {
-		// nothing
+
 	}
 }

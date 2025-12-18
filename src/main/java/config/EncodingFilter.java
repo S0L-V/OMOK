@@ -11,53 +11,55 @@ import javax.servlet.ServletResponse;
 import javax.servlet.annotation.WebFilter;
 import javax.servlet.annotation.WebInitParam;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
-/**
- * UTF-8 인코딩 필터
- * @WebFilter로 자동 등록
- */
-@WebFilter(
-    filterName = "encodingFilter",
-    urlPatterns = {"/*"}, 
-    initParams = {
-        @WebInitParam(name = "encoding", value = "UTF-8")
-    }
-)
+@WebFilter(filterName = "encodingFilter", urlPatterns = {"/*"}, initParams = {
+	@WebInitParam(name = "encoding", value = "UTF-8")})
 public class EncodingFilter implements Filter {
 
-    private String encoding = "UTF-8";
+	private String encoding = "UTF-8";
 
-    @Override
-    public void init(FilterConfig filterConfig) throws ServletException {
-        // web.xml에서 설정한 인코딩 값 가져오기
-        String encodingParam = filterConfig.getInitParameter("encoding");
-        if (encodingParam != null && !encodingParam.isEmpty()) {
-            this.encoding = encodingParam;
-        }
-        System.out.println("[EncodingFilter] 초기화 완료 - 인코딩: " + this.encoding);
-    }
+	@Override
+	public void init(FilterConfig filterConfig) throws ServletException {
+		String encodingParam = filterConfig.getInitParameter("encoding");
+		if (encodingParam != null && !encodingParam.isEmpty()) {
+			this.encoding = encodingParam;
+		}
+		System.out.println("[EncodingFilter] 초기화 완료 - 인코딩: " + this.encoding);
+	}
 
-    @Override
-    public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
-            throws IOException, ServletException {
+	@Override
+	public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
+		throws IOException, ServletException {
 
-        HttpServletRequest httpRequest = (HttpServletRequest) request;
+		HttpServletRequest req = (HttpServletRequest)request;
+		HttpServletResponse res = (HttpServletResponse)response;
 
-        // 요청 인코딩 설정
-        if (request.getCharacterEncoding() == null) {
-            request.setCharacterEncoding(encoding);
-        }
+		if (req.getCharacterEncoding() == null) {
+			req.setCharacterEncoding(encoding);
+		}
+		res.setCharacterEncoding(encoding);
 
-        // 응답 인코딩 설정
-        response.setCharacterEncoding(encoding);
-        response.setContentType("text/html; charset=" + encoding);
+		String uri = req.getRequestURI();
+		String ctx = req.getContextPath();
 
-        // 다음 필터 또는 서블릿으로 전달
-        chain.doFilter(request, response);
-    }
+		// 정적 리소스 여부 확인 (제외 필요)
+		boolean isStaticResource = uri.startsWith(ctx + "/static/")
+			|| uri.matches(".*\\.(css|js|png|jpg|jpeg|gif|svg|ico|woff|woff2|map)$");
 
-    @Override
-    public void destroy() {
-        System.out.println("[EncodingFilter] 종료");
-    }
+		if (!isStaticResource) {
+			if (req.getCharacterEncoding() == null) {
+				req.setCharacterEncoding(encoding);
+			}
+			res.setCharacterEncoding(encoding);
+			res.setContentType("text/html; charset=" + encoding);
+		}
+
+		chain.doFilter(request, response);
+	}
+
+	@Override
+	public void destroy() {
+		System.out.println("[EncodingFilter] 종료");
+	}
 }
