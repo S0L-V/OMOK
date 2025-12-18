@@ -15,6 +15,7 @@ import javax.sql.DataSource;
 import com.google.gson.Gson;
 
 import friend.dto.FriendDTO;
+import friend.dto.FriendRequestDTO;
 import friend.service.FriendService;
 import friend.service.FriendServiceImpl;
 
@@ -120,14 +121,14 @@ public class FriendController extends HttpServlet {
 	 * POST /friend/request - 친구 요청 보내기
 	 */
 	private void handleSendRequest(HttpServletRequest req, HttpServletResponse res, String userId) throws IOException {
-		RequestBody body = gson.fromJson(req.getReader(), RequestBody.class);
+		FriendRequestDTO body = gson.fromJson(req.getReader(), FriendRequestDTO.class);
 
-		if (body.friendId == null || body.friendId.isBlank()) {
+		if (body.getFriendId() == null || body.getFriendId().isBlank()) {
 			sendError(res, 400, "friendId가 필요합니다.");
 			return;
 		}
 
-		boolean success = friendService.sendFriendRequest(userId, body.friendId);
+		boolean success = friendService.sendFriendRequest(userId, body.getFriendId());
 
 		if (success) {
 			sendSuccess(res, "친구 요청을 보냈습니다.");
@@ -139,16 +140,16 @@ public class FriendController extends HttpServlet {
 	/**
 	 * POST /friend/accept - 친구 요청 수락
 	 */
-	private void handleAcceptRequest(HttpServletRequest req, HttpServletResponse ree, String userId) throws
+	private void handleAcceptRequest(HttpServletRequest req, HttpServletResponse res, String userId) throws
 		IOException {
-		RequestBody body = gson.fromJson(req.getReader(), RequestBody.class);
+		FriendRequestDTO body = gson.fromJson(req.getReader(), FriendRequestDTO.class);
 
-		if (body.requesterId == null || body.requesterId.isBlank()) {
+		if (body.getFriendId() == null || body.getFriendId().isBlank()) {
 			sendError(res, 400, "requesterId가 필요합니다.");
 			return;
 		}
 
-		boolean success = friendService.acceptFriendRequest(body.requesterId, userId);
+		boolean success = friendService.acceptFriendRequest(body.getFriendId(), userId);
 
 		if (success) {
 			sendSuccess(res, "친구 요청을 수락했습니다.");
@@ -161,14 +162,14 @@ public class FriendController extends HttpServlet {
 	 * POST /friend/remove - 친구 삭제
 	 */
 	private void handleRemoveFriend(HttpServletRequest req, HttpServletResponse res, String userId) throws IOException {
-		RequestBody body = gson.fromJson(req.getReader(), RequestBody.class);
+		FriendRequestDTO body = gson.fromJson(req.getReader(), FriendRequestDTO.class);
 
-		if (body.friendId == null || body.friendId.isBlank()) {
+		if (body.getFriendId() == null || body.getFriendId().isBlank()) {
 			sendError(res, 404, "friendId가 필요합니다.");
 			return;
 		}
 
-		boolean success = friendService.removeFriend(userId, body.friendId);
+		boolean success = friendService.removeFriend(userId, body.getFriendId());
 
 		if (success) {
 			sendSuccess(res, "친구를 삭제했습니다.");
@@ -181,14 +182,14 @@ public class FriendController extends HttpServlet {
 	 * POST /friend/block - 친구 차단
 	 */
 	private void handleBlockFriend(HttpServletRequest req, HttpServletResponse res, String userId) throws IOException {
-		RequestBody body = gson.fromJson(req.getReader(), RequestBody.class);
+		FriendRequestDTO body = gson.fromJson(req.getReader(), FriendRequestDTO.class);
 
-		if (body.friendId == null || body.friendId.isBlank()) {
+		if (body.getFriendId() == null || body.getFriendId().isBlank()) {
 			sendError(res, 400, "friendId가 필요합니다.");
 			return;
 		}
 
-		boolean success = friendService.blockFriend(userId, body.friendId);
+		boolean success = friendService.blockFriend(userId, body.getFriendId());
 
 		if (success) {
 			sendSuccess(res, "친구를 차단했습니다.");
@@ -208,6 +209,9 @@ public class FriendController extends HttpServlet {
 		return (String)session.getAttribute("userId");
 	}
 
+	/**
+	 * 성공 응답
+	 */
 	private void sendSuccess(HttpServletResponse res, Object data) throws IOException {
 		res.setStatus(200);
 
@@ -215,11 +219,15 @@ public class FriendController extends HttpServlet {
 		res.getWriter().write(gson.toJson(response));
 	}
 
+	/**
+	 * 에러 응답
+	 */
 	private void sendError(HttpServletResponse res, int statusCode, String message) throws IOException {
 		ApiResponse response = new ApiResponse(false, null, message);
 		res.getWriter().write(gson.toJson(response));
 	}
 
+	// API 응답용 내부 클래스
 	private static class ApiResponse {
 		boolean success;
 		Object data;
