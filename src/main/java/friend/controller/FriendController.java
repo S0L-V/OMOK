@@ -9,7 +9,6 @@ import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
 import javax.sql.DataSource;
 
 import com.google.gson.Gson;
@@ -202,11 +201,13 @@ public class FriendController extends HttpServlet {
 	 * 세션에서 로그인한 사용자 ID 가져오기
 	 */
 	private String getLoginUserId(HttpServletRequest req) {
-		HttpSession session = req.getSession(false);
-		if (session == null) {
-			return null;
-		}
-		return (String)session.getAttribute("userId");
+		// HttpSession session = req.getSession(false);
+		// if (session == null) {
+		// 	return null;
+		// }
+		// return (String)session.getAttribute("userId");
+
+		return "user-001";
 	}
 
 	/**
