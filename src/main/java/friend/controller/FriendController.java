@@ -3,13 +3,11 @@ package friend.controller;
 import java.io.IOException;
 import java.util.List;
 
-import javax.naming.InitialContext;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.sql.DataSource;
 
 import com.google.gson.Gson;
 
@@ -27,9 +25,7 @@ public class FriendController extends HttpServlet {
 	@Override
 	public void init() throws ServletException {
 		try {
-			DataSource dataSource = (DataSource)new InitialContext()
-				.lookup("java:/comp/env/jdbc/oracle");
-			this.friendService = new FriendServiceImpl(dataSource);
+			this.friendService = new FriendServiceImpl();
 			this.gson = new Gson();
 		} catch (Exception e) {
 			throw new ServletException("FriendController 초기화 실패");

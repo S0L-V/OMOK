@@ -5,8 +5,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import javax.sql.DataSource;
-
 import friend.dao.FriendDAO;
 import friend.dao.FriendDAOImpl;
 import friend.dto.FriendDTO;
@@ -15,8 +13,8 @@ public class FriendServiceImpl implements FriendService {
 
 	private final FriendDAO friendDAO;
 
-	public FriendServiceImpl(DataSource dataSource) {
-		this.friendDAO = new FriendDAOImpl(dataSource);
+	public FriendServiceImpl() {
+		this.friendDAO = new FriendDAOImpl();
 	}
 
 	@Override
