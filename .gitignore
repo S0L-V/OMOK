@@ -8,6 +8,7 @@
 /bin/
 /target/
 /.apt_generated/
+/bin/
 
 ### Tomcat / Server ###
 Servers/
@@ -22,3 +23,7 @@ context.xml
 
 ### ENV ###
 application.properties
+
+### IntelliJ ###
+.idea/
+*.iml
