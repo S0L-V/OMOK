@@ -18,3 +18,5 @@ context.xml
 
 ### OS ###
 .DS_Store
+application.properties
+/.apt_generated/

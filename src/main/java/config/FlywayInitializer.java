@@ -6,8 +6,6 @@ import javax.servlet.annotation.WebListener;
 
 import org.flywaydb.core.Flyway;
 
-import util.AppConfig;
-
 @WebListener
 public class FlywayInitializer implements ServletContextListener {
 
@@ -28,6 +26,6 @@ public class FlywayInitializer implements ServletContextListener {
 
 	@Override
 	public void contextDestroyed(ServletContextEvent sce) {
-		// nothing
+
 	}
 }

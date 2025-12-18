@@ -1,5 +1,4 @@
-// 파일명: src/main/java/util/AppConfig.java
-package util;
+package config;
 
 import java.io.InputStream;
 import java.io.InputStreamReader;
