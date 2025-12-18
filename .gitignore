@@ -7,6 +7,7 @@
 /build/
 /bin/
 /target/
+/.apt_generated/
 
 ### Tomcat / Server ###
 Servers/
@@ -19,5 +20,5 @@ context.xml
 ### OS ###
 .DS_Store
 
-# Sensitive application config
-src/main/resources/application.properties
+### ENV ###
+application.properties
