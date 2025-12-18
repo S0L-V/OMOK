@@ -3,7 +3,6 @@ package friend.service;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import friend.dao.FriendDAO;
 import friend.dao.FriendDAOImpl;
@@ -76,13 +75,7 @@ public class FriendServiceImpl implements FriendService {
 	@Override
 	public List<FriendDTO> getPendingRequests(String userId) {
 		try {
-			// 전체 ACCEPTED 친구 목록을 가져온 뒤, 필터링
-			List<FriendDTO> allRelations = friendDAO.findAcceptedFriends(userId);
-
-			// PENDING 상태이면서, 내가 friend_id인 것만 필터링
-			return allRelations.stream()
-				.filter(f -> "PENDING".equals(f.getStatus()) && userId.equals(f.getFriendId()))
-				.collect(Collectors.toList());
+			return friendDAO.findPendingRequests(userId);
 		} catch (SQLException e) {
 			e.printStackTrace();
 			return new ArrayList<>();

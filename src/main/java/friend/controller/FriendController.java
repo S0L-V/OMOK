@@ -11,6 +11,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import com.google.gson.Gson;
 
+import friend.dto.FriendAcceptDTO;
 import friend.dto.FriendDTO;
 import friend.dto.FriendRequestDTO;
 import friend.service.FriendService;
@@ -137,14 +138,14 @@ public class FriendController extends HttpServlet {
 	 */
 	private void handleAcceptRequest(HttpServletRequest req, HttpServletResponse res, String userId) throws
 		IOException {
-		FriendRequestDTO body = gson.fromJson(req.getReader(), FriendRequestDTO.class);
+		FriendAcceptDTO body = gson.fromJson(req.getReader(), FriendAcceptDTO.class);
 
-		if (body.getFriendId() == null || body.getFriendId().isBlank()) {
+		if (body.getRequesterId() == null || body.getRequesterId().isBlank()) {
 			sendError(res, 400, "requesterId가 필요합니다.");
 			return;
 		}
 
-		boolean success = friendService.acceptFriendRequest(body.getFriendId(), userId);
+		boolean success = friendService.acceptFriendRequest(body.getRequesterId(), userId);
 
 		if (success) {
 			sendSuccess(res, "친구 요청을 수락했습니다.");

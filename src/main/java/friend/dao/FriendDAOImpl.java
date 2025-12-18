@@ -151,6 +151,37 @@ public class FriendDAOImpl implements FriendDAO {
 		return null;
 	}
 
+	@Override
+	public List<FriendDTO> findPendingRequests(String userId) throws SQLException {
+		String query = """
+			    SELECT id, user_id, friend_id, status, created_at
+			    FROM friend
+			    WHERE friend_id = ? AND status = 'PENDING'
+			""";
+
+		List<FriendDTO> list = new ArrayList<>();
+
+		try (Connection conn = DB.getConnection();
+			 PreparedStatement pstmt = conn.prepareStatement(query)) {
+
+			pstmt.setString(1, userId);
+
+			try (ResultSet rs = pstmt.executeQuery()) {
+				while (rs.next()) {
+					list.add(mapRow(rs));
+				}
+			}
+
+			System.out.println("[DAO] findPendingRequests: " + list.size() + "건");
+
+		} catch (Exception e) {
+			System.err.println("[DAO] findPendingRequests 실패!");
+			throw new SQLException("findPendingRequests 실패", e);
+		}
+
+		return list;
+	}
+
 	private FriendDTO mapRow(ResultSet rs) throws SQLException {
 		return FriendDTO.builder()
 			.id(rs.getString("id"))
