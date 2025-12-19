@@ -170,7 +170,7 @@ public class FriendController extends HttpServlet {
 		if (success) {
 			sendSuccess(res, "친구를 삭제했습니다.");
 		} else {
-			sendError(res, 404, "친구 삭제에 실패했습니다.");
+			sendError(res, 400, "친구 삭제에 실패했습니다.");
 		}
 	}
 
