@@ -10,7 +10,7 @@ public class GameResultDAO {
 	/**
 	 * 게임 결과 일괄 저장(한 게임의 모든 플레이어)
 	 * @param gameResultList 게임 결과 리스트
-	 * @param 성공 여부
+	 * @return 성공 여부
 	 */
 	public int insertGameResultBatch(List<GameResultDTO> gameResultList) {
 
