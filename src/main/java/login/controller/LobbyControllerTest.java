@@ -9,7 +9,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
-@WebServlet("/lobby")
+@WebServlet("/lobby-test")
 public class LobbyControllerTest extends HttpServlet {
 
 	@Override
@@ -32,6 +32,6 @@ public class LobbyControllerTest extends HttpServlet {
 		request.setAttribute("loginNickname", loginNickname);
 
 		// ✅ WEB-INF 아래 JSP로 forward (직접 URL 접근 불가, 서블릿 통해서만 접근)
-		request.getRequestDispatcher("/login/lobbyTest.jsp").forward(request, response);
+		request.getRequestDispatcher("/login/lobby.jsp").forward(request, response);
 	}
 }
