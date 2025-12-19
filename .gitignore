@@ -8,7 +8,6 @@
 /bin/
 /target/
 /.apt_generated/
-/bin/
 
 ### Tomcat / Server ###
 Servers/
