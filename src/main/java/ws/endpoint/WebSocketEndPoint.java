@@ -30,9 +30,6 @@ public class WebSocketEndPoint {
 		Map<String, Object> payload = new HashMap<>();
 		payload.put("type", "CONNECTED");
 
-		System.out.println(session);
-		System.out.println("CONNECTED");
-
 		session.getAsyncRemote().sendText(gson.toJson(payload));
 	}
 }
