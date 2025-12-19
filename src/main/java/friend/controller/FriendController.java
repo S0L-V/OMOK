@@ -119,7 +119,7 @@ public class FriendController extends HttpServlet {
 	private void handleSendRequest(HttpServletRequest req, HttpServletResponse res, String userId) throws IOException {
 		FriendRequestDTO body = gson.fromJson(req.getReader(), FriendRequestDTO.class);
 
-		if (body.getFriendId() == null || body.getFriendId().isBlank()) {
+		if (body == null || body.getFriendId() == null || body.getFriendId().isBlank()) {
 			sendError(res, 400, "friendId가 필요합니다.");
 			return;
 		}
@@ -140,7 +140,7 @@ public class FriendController extends HttpServlet {
 		IOException {
 		FriendAcceptDTO body = gson.fromJson(req.getReader(), FriendAcceptDTO.class);
 
-		if (body.getRequesterId() == null || body.getRequesterId().isBlank()) {
+		if (body == null || body.getRequesterId() == null || body.getRequesterId().isBlank()) {
 			sendError(res, 400, "requesterId가 필요합니다.");
 			return;
 		}
@@ -160,8 +160,8 @@ public class FriendController extends HttpServlet {
 	private void handleRemoveFriend(HttpServletRequest req, HttpServletResponse res, String userId) throws IOException {
 		FriendRequestDTO body = gson.fromJson(req.getReader(), FriendRequestDTO.class);
 
-		if (body.getFriendId() == null || body.getFriendId().isBlank()) {
-			sendError(res, 404, "friendId가 필요합니다.");
+		if (body == null || body.getFriendId() == null || body.getFriendId().isBlank()) {
+			sendError(res, 400, "friendId가 필요합니다.");
 			return;
 		}
 
@@ -180,7 +180,7 @@ public class FriendController extends HttpServlet {
 	private void handleBlockFriend(HttpServletRequest req, HttpServletResponse res, String userId) throws IOException {
 		FriendRequestDTO body = gson.fromJson(req.getReader(), FriendRequestDTO.class);
 
-		if (body.getFriendId() == null || body.getFriendId().isBlank()) {
+		if (body == null || body.getFriendId() == null || body.getFriendId().isBlank()) {
 			sendError(res, 400, "friendId가 필요합니다.");
 			return;
 		}
@@ -212,7 +212,6 @@ public class FriendController extends HttpServlet {
 	 */
 	private void sendSuccess(HttpServletResponse res, Object data) throws IOException {
 		res.setStatus(200);
-
 		ApiResponse response = new ApiResponse(true, data, null);
 		res.getWriter().write(gson.toJson(response));
 	}
@@ -221,6 +220,7 @@ public class FriendController extends HttpServlet {
 	 * 에러 응답
 	 */
 	private void sendError(HttpServletResponse res, int statusCode, String message) throws IOException {
+		res.setStatus(statusCode);
 		ApiResponse response = new ApiResponse(false, null, message);
 		res.getWriter().write(gson.toJson(response));
 	}

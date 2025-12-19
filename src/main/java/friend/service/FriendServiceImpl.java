@@ -18,7 +18,7 @@ public class FriendServiceImpl implements FriendService {
 
 	@Override
 	public boolean sendFriendRequest(String requesterId, String receiverId) {
-		if (requesterId == null || requesterId == null) {
+		if (requesterId == null || receiverId == null) {
 			return false;
 		}
 
@@ -27,14 +27,14 @@ public class FriendServiceImpl implements FriendService {
 			FriendDTO existing1 = friendDAO.findRelation(requesterId, receiverId);
 			FriendDTO existing2 = friendDAO.findRelation(receiverId, requesterId);
 
-			if (existing1 != null && existing2 != null) {
+			if (existing1 != null || existing2 != null) {
 				return false;
 			}
 
 			int result = friendDAO.createRequest(requesterId, receiverId);
 			return result > 0;
 		} catch (SQLException e) {
-			e.getErrorCode();
+			e.printStackTrace();
 			return false;
 		}
 	}
@@ -83,9 +83,9 @@ public class FriendServiceImpl implements FriendService {
 	}
 
 	@Override
-	public boolean blockFriend(String userId, String fiendId) {
+	public boolean blockFriend(String userId, String friendId) {
 		try {
-			int result = friendDAO.updateStatus(userId, fiendId, "BLOCKED");
+			int result = friendDAO.updateStatus(userId, friendId, "BLOCKED");
 			return result > 0;
 		} catch (SQLException e) {
 			e.printStackTrace();
