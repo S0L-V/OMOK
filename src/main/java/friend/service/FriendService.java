@@ -34,5 +34,5 @@ public interface FriendService {
 	/**
 	 * 친구 차단
 	 */
-	boolean blockFriend(String userId, String fiendId);
+	boolean blockFriend(String userId, String friendId);
 }
