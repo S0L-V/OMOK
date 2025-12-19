@@ -13,7 +13,7 @@ import javax.websocket.server.ServerEndpoint;
 import com.google.gson.Gson;
 
 @ServerEndpoint(value = "/ws", configurator = LobbyWebSocketConfig.class)
-public class LobbyWebSocketEndPoint {
+public class LobbyWebSocket {
 
 	private static final Gson gson = new Gson();
 	private static final LobbySessionContext sessionContext = LobbySessionContext.getInstance();
@@ -22,13 +22,12 @@ public class LobbyWebSocketEndPoint {
 	public void onOpen(Session session, EndpointConfig config) throws IOException {
 
 		HttpSession httpSession = (HttpSession)config.getUserProperties().get(HttpSession.class.getName());
-
 		sessionContext.connectSession(session, httpSession);
 
 		Map<String, Object> payload = new HashMap<>();
 		payload.put("type", "CONNECTED");
-		System.out.println("CONNECTED");
 
 		session.getAsyncRemote().sendText(gson.toJson(payload));
 	}
+
 }
