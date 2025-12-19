@@ -16,9 +16,15 @@ Servers/
 ### Context / DB Config ###
 context.xml
 **/META-INF/context.xml
+src/main/webapp/META-INF/context.xml
+**/application.properties
 
 ### OS ###
 .DS_Store
 
 ### ENV ###
 application.properties
+
+### IntelliJ ###
+.idea/
+*.iml

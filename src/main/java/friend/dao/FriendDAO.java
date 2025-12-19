@@ -37,4 +37,8 @@ public interface FriendDAO {
 	 */
 	FriendDTO findRelation(String userId, String friendId) throws SQLException;
 
+	/**
+	 * 특정 사용자가 받은 친구 목록 조회 (PENDING 상태)
+	 */
+	List<FriendDTO> findPendingRequests(String userId) throws SQLException;
 }
