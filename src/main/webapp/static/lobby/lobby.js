@@ -1,78 +1,87 @@
 (() => {
-  let ws;
+  let lobbyWs = null;
 
-  function wsUrl() {
+ function buildLobbyWsUrl() {
     const protocol = location.protocol === "https:" ? "wss://" : "ws://";
     return protocol + location.host + "/ws";
   }
 
-  function connect() {
-    const url = wsUrl();
-    console.log("[WS] connecting:", url);
+  /* =========================
+   * Connect
+   * ========================= */
+  function connectLobby() {
+    const url = buildLobbyWsUrl();
+    console.log("[LobbyWS] connecting:", url);
 
-    ws = new WebSocket(url);
+    lobbyWs = new WebSocket(url);
 
-    ws.onopen = () => {
-      console.log("[WS] open");
-      send({ type: "LOBBY_ENTER" });
+    lobbyWs.onopen = () => {
+      console.log("[LobbyWS] open");
+      sendLobby({ type: "LOBBY_ENTER" });
     };
 
-    ws.onmessage = (event) => {
+    lobbyWs.onmessage = (event) => {
       const msg = safeJsonParse(event.data);
       if (!msg) return;
 
       switch (msg.type) {
         case "CONNECTED":
-          console.log("[WS] CONNECTED");
+          console.log("[LobbyWS] CONNECTED");
           break;
 
-        case "INIT_ROOM_LIST": // 초기 목록
+        case "INIT_ROOM_LIST":
           renderRoomList(msg.rooms || []);
           break;
 
-        case "ROOM_LIST_UPDATE": // 목록 업데이트 발생
+        case "ROOM_LIST_UPDATE":
           renderRoomList(msg.rooms || []);
           break;
 
         case "ERROR":
-          console.warn("[WS] ERROR:", msg.code, msg.message);
+          console.warn("[LobbyWS] ERROR:", msg.code, msg.message);
           alert(msg.message || "오류가 발생했습니다.");
           break;
 
         default:
-          console.log("[WS] message:", msg);
+          console.log("[LobbyWS] message:", msg);
       }
     };
 
-    ws.onclose = (event) => {
-      console.warn("[WS] close:", event.code, event.reason);
+    lobbyWs.onclose = (event) => {
+      console.warn("[LobbyWS] close:", event.code, event.reason);
     };
 
-    ws.onerror = (event) => {
-      console.warn("[WS] error:", event);
+    lobbyWs.onerror = (event) => {
+      console.warn("[LobbyWS] error:", event);
     };
   }
 
-  function send(obj) {
-    if (!ws || ws.readyState !== WebSocket.OPEN) return;
-    ws.send(JSON.stringify(obj));
+  /* =========================
+   * Send
+   * ========================= */
+  function sendLobby(obj) {
+    if (!lobbyWs || lobbyWs.readyState !== WebSocket.OPEN) return;
+    lobbyWs.send(JSON.stringify(obj));
   }
 
+  /* =========================
+   * Utils
+   * ========================= */
   function safeJsonParse(raw) {
     try {
       return JSON.parse(raw);
     } catch (e) {
-      console.warn("[WS] invalid json:", raw);
+      console.warn("[LobbyWS] invalid json:", raw);
       return null;
     }
   }
 
+  /* =========================
+   * UI
+   * ========================= */
   function renderRoomList(rooms) {
     const tbody = document.querySelector("#room-tbody");
-    if (!tbody) {
-      console.warn("room tbody(#room-tbody) not found");
-      return;
-    }
+    if (!tbody) return;
 
     if (!rooms.length) {
       tbody.innerHTML = `<tr><td colspan="5">현재 생성된 방이 없습니다.</td></tr>`;
@@ -83,10 +92,8 @@
 
     tbody.querySelectorAll(".btn-join").forEach((btn) => {
       btn.addEventListener("click", () => {
-        const roomId = btn.getAttribute("data-room-id");
+        const roomId = btn.dataset.roomId;
         if (!roomId) return;
-        
-      	send({ type: "ROOM_ENTER", roomId });
 
         location.href = `/room?roomId=${encodeURIComponent(roomId)}`;
       });
@@ -94,7 +101,7 @@
   }
 
   function toRowHtml(r) {
-    const roomId = r.roomId ?? r.id ?? "";
+    const roomId = r.roomId ?? "";
     const roomName = r.roomName ?? "-";
     const isPublic = normalizePublic(r);
     const playType = normalizePlayType(r);
@@ -107,29 +114,29 @@
         <td>${escapeHtml(playType)}</td>
         <td>${current}/${total}</td>
         <td>
-          <button data-room-id="${escapeHtml(roomId)}" class="btn-join">입장</button>
+          <button class="btn-join" data-room-id="${escapeHtml(roomId)}">
+            입장
+          </button>
         </td>
       </tr>
     `;
   }
 
   function normalizePublic(r) {
-    const v = r.isPublic ?? r.public ?? r.open;
-    if (v === "0") return "공개";
-    return "비공개";
+    return r.isPublic === "0" ? "공개" : "비공개";
   }
 
   function normalizePlayType(r) {
-    const v = r.playType ?? r.gameType ?? "-";
-    if (v === "0") return "개인전";
-    if (v === "1") return "팀전";
-    return String(v);
+    if (r.playType === "0") return "개인전";
+    if (r.playType === "1") return "팀전";
+    return "-";
   }
 
   function normalizeCount(r) {
-    const current = r.currentUserCnt ?? r.currentUserCount ?? r.current ?? 0;
-    const total = r.totalUserCnt ?? r.totalUserCount ?? r.total ?? 0;
-    return { current, total };
+    return {
+      current: r.currentUserCnt ?? 0,
+      total: r.totalUserCnt ?? 0,
+    };
   }
 
   function escapeHtml(str) {
@@ -141,11 +148,17 @@
       .replaceAll("'", "&#039;");
   }
 
+  /* =========================
+   * Cleanup
+   * ========================= */
   window.addEventListener("beforeunload", () => {
     try {
-      ws?.close();
+      lobbyWs?.close();
     } catch (_) {}
   });
 
-  connect();
+  /* =========================
+   * Start
+   * ========================= */
+  connectLobby();
 })();

@@ -1,4 +1,4 @@
-package ws.endpoint;
+package room.ws;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -12,13 +12,11 @@ import javax.websocket.server.ServerEndpoint;
 
 import com.google.gson.Gson;
 
-import ws.session.SessionContext;
-
-@ServerEndpoint(value = "/ws", configurator = WebSocketConfigurator.class)
-public class WebSocketEndPoint {
+@ServerEndpoint(value = "/ws", configurator = LobbyWebSocketConfig.class)
+public class LobbyWebSocketEndPoint {
 
 	private static final Gson gson = new Gson();
-	private static final SessionContext sessionContext = SessionContext.getInstance();
+	private static final LobbySessionContext sessionContext = LobbySessionContext.getInstance();
 
 	@OnOpen
 	public void onOpen(Session session, EndpointConfig config) throws IOException {
@@ -29,6 +27,7 @@ public class WebSocketEndPoint {
 
 		Map<String, Object> payload = new HashMap<>();
 		payload.put("type", "CONNECTED");
+		System.out.println("CONNECTED");
 
 		session.getAsyncRemote().sendText(gson.toJson(payload));
 	}

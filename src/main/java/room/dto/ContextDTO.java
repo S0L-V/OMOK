@@ -1,7 +1,12 @@
-package ws.session;
+package room.dto;
 
 import javax.servlet.http.HttpSession;
 
+import lombok.Getter;
+import lombok.Setter;
+
+@Getter
+@Setter
 public class ContextDTO {
 	String wsSessionId;
 	HttpSession httpSession;

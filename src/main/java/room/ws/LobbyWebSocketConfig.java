@@ -1,11 +1,11 @@
-package ws.endpoint;
+package room.ws;
 
 import javax.servlet.http.HttpSession;
 import javax.websocket.HandshakeResponse;
 import javax.websocket.server.HandshakeRequest;
 import javax.websocket.server.ServerEndpointConfig;
 
-public class WebSocketConfigurator extends ServerEndpointConfig.Configurator {
+public class LobbyWebSocketConfig extends ServerEndpointConfig.Configurator {
 
 	@Override
 	public void modifyHandshake(ServerEndpointConfig sec,
