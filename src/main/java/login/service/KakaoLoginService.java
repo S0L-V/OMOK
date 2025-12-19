@@ -4,7 +4,6 @@ import java.sql.Connection;
 import java.util.Random;
 import java.util.UUID;
 
-import login.config.DbUtil;
 import login.dao.LoginUserDAO;
 import login.dao.LoginUserDAOImpl;
 import login.dao.LoginUserInfoDAO;
@@ -13,6 +12,7 @@ import login.dto.KakaoTokenResponseDTO;
 import login.dto.KakaoUserInfoDTO;
 import login.vo.UserInfoVo;
 import login.vo.UserVo;
+import util.DB;
 
 public class KakaoLoginService {
 
@@ -38,7 +38,7 @@ public class KakaoLoginService {
 			? "kakao"
 			: kakaoUser.getNickname();
 
-		try (Connection conn = DbUtil.getConnection()) {
+		try (Connection conn = DB.getConnection()) {
 			conn.setAutoCommit(false);
 
 			try {
