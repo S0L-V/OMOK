@@ -62,10 +62,10 @@
 					</td>
 
 					<td>
-						<form action="${pageContext.request.contextPath}/room" method="get">
-							<input type="hidden" name="roomId" value="${room.id}" />
-							<button type="submit">입장</button>
-						</form>
+					  <form action="${pageContext.request.contextPath}/room/enter" method="post">
+					    <input type="hidden" name="roomId" value="${room.id}" />
+					    <button type="submit">입장</button>
+					  </form>
 					</td>
 				</tr>
 			</c:forEach>

@@ -22,8 +22,10 @@
       </div>
 
       <div class="actions">
-        <button type="button" id="btn-leave">나가기</button>
-        <button type="button" id="btn-lobby">로비로</button>
+		<form action="${pageContext.request.contextPath}/room/exit" method="post">
+		  <input type="hidden" name="roomId" value="${roomId}" />
+		  <button type="submit">나가기</button>
+		</form>
       </div>
     </header>
 
