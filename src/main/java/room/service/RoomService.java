@@ -34,6 +34,15 @@ public class RoomService {
 			  AND status = ?
 			""";
 
+		final String qDecRoomCnt = """
+			UPDATE room
+			SET current_user_cnt = CASE
+				WHEN current_user_cnt > 0 THEN current_user_cnt - 1
+				ELSE 0
+			END
+			WHERE id = ?
+			""";
+
 		final String qActiveCount = """
 			SELECT COUNT(*) AS cnt
 			FROM room_player
@@ -77,7 +86,7 @@ public class RoomService {
 			conn.setAutoCommit(false);
 
 			try {
-				// 방 row 잠금 
+				// 방 row 잠금
 				try (PreparedStatement pstmt = conn.prepareStatement(qLockRoom)) {
 					pstmt.setString(1, roomId);
 					try (ResultSet rs = pstmt.executeQuery()) {
@@ -86,7 +95,7 @@ public class RoomService {
 					}
 				}
 
-				// 퇴장 처리
+				// 퇴장 처리 (IN_ROOM -> EXIT)
 				int updated;
 				try (PreparedStatement pstmt = conn.prepareStatement(qExitPlayer)) {
 					pstmt.setString(1, STATUS_EXIT);
@@ -96,12 +105,19 @@ public class RoomService {
 					updated = pstmt.executeUpdate();
 				}
 
+				// 이미 나가있거나 없는 유저면 아무 것도 안 함
 				if (updated == 0) {
 					conn.commit();
 					return "ROOM_EXIT";
 				}
 
-				// 퇴장 후 남은 인원 카운트
+				// room.current_user_cnt 감소 (퇴장 성공 시)
+				try (PreparedStatement pstmt = conn.prepareStatement(qDecRoomCnt)) {
+					pstmt.setString(1, roomId);
+					pstmt.executeUpdate();
+				}
+
+				// 퇴장 후 남은 인원 카운트 (status=IN_ROOM)
 				int activeCnt = 0;
 				try (PreparedStatement pstmt = conn.prepareStatement(qActiveCount)) {
 					pstmt.setString(1, roomId);
@@ -112,7 +128,7 @@ public class RoomService {
 					}
 				}
 
-				// 방에 아무도 없는 경우 방 삭제
+				// 방에 아무도 없으면 방 삭제
 				if (activeCnt == 0) {
 					try (PreparedStatement pstmt = conn.prepareStatement(qDeleteRoomPlayers)) {
 						pstmt.setString(1, roomId);
@@ -127,7 +143,7 @@ public class RoomService {
 					return "ROOM_DELETE";
 				}
 
-				// host 위임 필요 여부 확인
+				// 6) host 위임 필요 여부 확인
 				String hostUserId = null;
 				try (PreparedStatement pstmt = conn.prepareStatement(qGetHost)) {
 					pstmt.setString(1, roomId);
@@ -137,7 +153,7 @@ public class RoomService {
 					}
 				}
 
-				// host 본인이 나가는 경우 host 위임
+				// 7) host 본인이 나가면 다음 host 위임
 				if (hostUserId != null && hostUserId.equals(userId)) {
 					String nextHostId = null;
 					try (PreparedStatement ps = conn.prepareStatement(qPickNextHost)) {

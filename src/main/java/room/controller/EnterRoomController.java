@@ -11,6 +11,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
+import lobby.ws.LobbyWebSocket;
 import room.dao.RoomPlayerDAO;
 import room.dao.RoomPlayerDAOImpl;
 
@@ -42,6 +43,8 @@ public class EnterRoomController extends HttpServlet {
 
 			roomPlayerDao.enterIfAbsent(roomId, userId);
 
+			System.out.println("[ENTER] ctx=" + request.getContextPath() + " roomId=" + roomId + " userId=" + userId);
+			LobbyWebSocket.broadcastRoomList();
 			response.sendRedirect(ctx + "/room?roomId=" + URLEncoder.encode(roomId, StandardCharsets.UTF_8));
 		} catch (Exception e) {
 			e.printStackTrace();

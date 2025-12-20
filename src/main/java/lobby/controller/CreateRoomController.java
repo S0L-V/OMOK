@@ -9,6 +9,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
+import lobby.ws.LobbyWebSocket;
 import room.dao.RoomDAO;
 import room.dao.RoomDAOImpl;
 
@@ -50,6 +51,8 @@ public class CreateRoomController extends HttpServlet {
 				roomPwd,
 				isPublic,
 				playType);
+
+			LobbyWebSocket.broadcastRoomList();
 
 			response.sendRedirect(request.getContextPath() + "/lobby");
 		} catch (Exception e) {

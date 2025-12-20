@@ -9,6 +9,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
+import lobby.ws.LobbyWebSocket;
 import room.service.RoomService;
 
 @WebServlet("/room/exit")
@@ -31,6 +32,8 @@ public class ExitRoomController extends HttpServlet {
 
 		try {
 			roomService.exitAndHandleHost(roomId, userId);
+			System.out.println("[EXIT] ctx=" + request.getContextPath() + " roomId=" + roomId + " userId=" + userId);
+			LobbyWebSocket.broadcastRoomList();
 			response.sendRedirect(ctx + "/lobby");
 		} catch (Exception e) {
 			e.printStackTrace();

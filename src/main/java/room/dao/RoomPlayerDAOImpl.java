@@ -55,45 +55,67 @@ public class RoomPlayerDAOImpl implements RoomPlayerDAO {
 	 * - 없다면 새로 INSERT
 	 */
 	@Override
-	public void enterIfAbsent(String roomId, String userId) throws Exception {
-		final String query = """
-				MERGE INTO room_player t
-				USING (
-				    SELECT ? AS room_id, ? AS user_id
-				    FROM dual
-				) s
-				ON (
-				    t.room_id = s.room_id
-				    AND t.user_id = s.user_id
-				)
-				WHEN MATCHED THEN
-				    UPDATE SET
-				        t.status = ?,
-				        t.joined_at = SYSTIMESTAMP
-				WHEN NOT MATCHED THEN
-				    INSERT (
-				        id,
-				        room_id,
-				        user_id,
-				        stone_color,
-				        status
-				    )
-				    VALUES (
-				        SYS_GUID(),
-				        s.room_id,
-				        s.user_id,
-				        NULL,
-				        ?
-				    )
-			""";
-		try (Connection conn = DB.getConnection();
-			PreparedStatement pstmt = conn.prepareStatement(query)) {
+	public boolean enterIfAbsent(String roomId, String userId) throws Exception {
+		try (Connection conn = DB.getConnection()) {
+			conn.setAutoCommit(false);
+			String checkSql = """
+				    SELECT status
+				    FROM room_player
+				    WHERE room_id = ?
+				      AND user_id = ?
+				""";
 
-			pstmt.setString(1, roomId);
-			pstmt.setString(2, userId);
-			pstmt.setString(3, STATUS_IN_ROOM);
-			pstmt.setString(4, STATUS_IN_ROOM);
-			pstmt.executeUpdate();
+			String status = null;
+			try (PreparedStatement ps = conn.prepareStatement(checkSql)) {
+				ps.setString(1, roomId);
+				ps.setString(2, userId);
+				try (ResultSet rs = ps.executeQuery()) {
+					if (rs.next()) {
+						status = rs.getString("status");
+					}
+				}
+			}
+
+			// 이미 들어와 있으면 아무 것도 안 함
+			if (STATUS_IN_ROOM.equals(status)) {
+				conn.rollback();
+				return false;
+			}
+
+			String mergeSql = """
+				    MERGE INTO room_player t
+				    USING (SELECT ? room_id, ? user_id FROM dual) s
+				    ON (t.room_id = s.room_id AND t.user_id = s.user_id)
+				    WHEN MATCHED THEN
+				        UPDATE SET
+				            t.status = ?,
+				            t.joined_at = SYSTIMESTAMP
+				    WHEN NOT MATCHED THEN
+				        INSERT (id, room_id, user_id, stone_color, status)
+				        VALUES (SYS_GUID(), s.room_id, s.user_id, NULL, ?)
+				""";
+
+			try (PreparedStatement ps = conn.prepareStatement(mergeSql)) {
+				ps.setString(1, roomId);
+				ps.setString(2, userId);
+				ps.setString(3, STATUS_IN_ROOM);
+				ps.setString(4, STATUS_IN_ROOM);
+				ps.executeUpdate();
+			}
+
+			String updateRoomSql = """
+				    UPDATE room
+				    SET current_user_cnt = current_user_cnt + 1
+				    WHERE id = ?
+				""";
+
+			try (PreparedStatement ps = conn.prepareStatement(updateRoomSql)) {
+				ps.setString(1, roomId);
+				ps.executeUpdate();
+			}
+
+			conn.commit();
+			return true;
 		}
 	}
 

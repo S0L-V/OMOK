@@ -8,7 +8,7 @@ public interface RoomPlayerDAO {
 
 	List<RoomPlayerDTO> getPlayerList(String roomId) throws Exception;
 
-	void enterIfAbsent(String roomId, String userId) throws Exception;
+	boolean enterIfAbsent(String roomId, String userId) throws Exception;
 
 	void exit(String roomId, String userId) throws Exception;
 
