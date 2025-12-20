@@ -168,12 +168,13 @@
           }
           break;
         }
-
+		/*
         case "ROOM_CHAT": {
           const p = msg.payload || {};
           appendChat(p.from, p.text);
           break;
         }
+        */
 
         case "ROOM_EXIT": {
           appendSystemLog("방에서 나갔습니다.");
