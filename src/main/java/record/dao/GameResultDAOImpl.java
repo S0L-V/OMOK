@@ -25,10 +25,10 @@ public class GameResultDAOImpl implements GameResultDAO {
 			for (GameResultDTO result : gameResults) {
 				pstmt.setString(1, result.getId());
 				pstmt.setString(2, result.getGameId());
-				pstmt.setString(3, result.getUserId());
-				pstmt.setString(4, result.getStoneColor());
-				pstmt.setString(5, result.getGameResult());
-				pstmt.setString(6, result.getPlayType());
+				pstmt.setString(3, result.getRoomId());
+				pstmt.setString(4, result.getUserId());
+				pstmt.setString(5, result.getStoneColor());
+				pstmt.setString(6, result.getGameResult());
 				pstmt.setString(7, result.getPlayType());
 
 				pstmt.addBatch();
