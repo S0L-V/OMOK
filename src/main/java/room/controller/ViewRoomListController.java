@@ -29,8 +29,9 @@ public class ViewRoomListController extends HttpServlet {
 			String loginNickname = session == null ? null : (String)session.getAttribute("loginNickname");
 
 			System.out.println(
-				"[LOGIN] session=" + session.getId() + " loginUserId=" + loginUserId + " loginNickname="
-					+ loginNickname);
+				"[LOGIN] session=" + (session == null ? "null" : session.getId())
+					+ " loginUserId=" + loginUserId
+					+ " loginNickname=" + loginNickname);
 
 			request.setAttribute("loginUserId", loginUserId);
 			request.setAttribute("loginNickname", loginNickname);
