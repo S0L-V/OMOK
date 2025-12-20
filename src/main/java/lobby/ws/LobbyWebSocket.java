@@ -1,4 +1,4 @@
-package room.ws;
+package lobby.ws;
 
 import java.util.HashMap;
 import java.util.Map;

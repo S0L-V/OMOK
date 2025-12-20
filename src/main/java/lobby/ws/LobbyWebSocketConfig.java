@@ -1,4 +1,4 @@
-package room.ws;
+package lobby.ws;
 
 import javax.servlet.http.HttpSession;
 import javax.websocket.HandshakeResponse;

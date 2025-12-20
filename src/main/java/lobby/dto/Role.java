@@ -1,4 +1,4 @@
-package room.dto;
+package lobby.dto;
 
 public enum Role {
 	USER, // 로그인 회원

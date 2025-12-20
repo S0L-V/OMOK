@@ -1,4 +1,4 @@
-package room.ws;
+package lobby.ws;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -6,8 +6,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import javax.servlet.http.HttpSession;
 import javax.websocket.Session;
 
-import room.dto.ContextDTO;
-import room.dto.Role;
+import lobby.dto.ContextDTO;
+import lobby.dto.Role;
 
 public class LobbySessionContext {
 
