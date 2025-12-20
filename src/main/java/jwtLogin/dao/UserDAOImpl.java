@@ -75,7 +75,7 @@ public class UserDAOImpl implements UserDAO {
 
 		String sqlUser = """
 			INSERT INTO users (id, email, pwd, login_type, created_at)
-			VALUES (?, ?, ?, '2', SYSTIMESTAMP)
+			VALUES (?, ?, ?, '0', SYSTIMESTAMP)
 			""";
 
 		String sqlInfo = """
