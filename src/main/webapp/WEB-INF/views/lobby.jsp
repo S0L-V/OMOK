@@ -62,7 +62,7 @@
 					</td>
 
 					<td>
-						<form action="${pageContext.request.contextPath}/room/enter" method="get">
+						<form action="${pageContext.request.contextPath}/room" method="get">
 							<input type="hidden" name="roomId" value="${room.id}" />
 							<button type="submit">입장</button>
 						</form>

@@ -26,6 +26,7 @@ public class CreateRoomController extends HttpServlet {
 		}
 
 		String hostUserId = (String)session.getAttribute("loginUserId");
+
 		if (hostUserId == null || hostUserId.isBlank()) {
 			response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "로그인이 필요합니다.");
 			return;
@@ -34,8 +35,6 @@ public class CreateRoomController extends HttpServlet {
 		System.out.println("session = " + session);
 		System.out.println("loginUserId = " + (session == null ? null : session.getAttribute("loginUserId")));
 		System.out.println("loginNickname = " + (session == null ? null : session.getAttribute("loginNickname")));
-
-		String hostUserId = (String)session.getAttribute("loginUserId");
 
 		String roomName = request.getParameter("roomName");
 		String roomPwd = request.getParameter("roomPwd");
