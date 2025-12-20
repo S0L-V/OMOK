@@ -16,13 +16,15 @@ public class RoomPlayerDAOImpl implements RoomPlayerDAO {
 	private static final String STATUS_LEAVE = "2"; // 퇴장
 
 	@Override
-	public List<RoomPlayerDTO> getUserList(String roomId) throws Exception {
+	public List<RoomPlayerDTO> getPlayerList(String roomId) throws Exception {
 		final String query = """
 					SELECT
 					    rp.user_id,
 					    ui.nickname,
 					    rp.stone_color,
-					    rp.joined_at
+					    rp.joined_at,
+					    rp.room_id,
+					    rp.status
 					FROM room_player rp
 					JOIN user_info ui
 					  ON ui.user_id = rp.user_id
@@ -153,6 +155,7 @@ public class RoomPlayerDAOImpl implements RoomPlayerDAO {
 			.stoneColor(rs.getString("stone_color"))
 			.joinedAt(rs.getString("joined_at"))
 			.status(rs.getString("status"))
+			.nickname(rs.getString("nickname"))
 			.build();
 	}
 }

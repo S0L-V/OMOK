@@ -14,7 +14,7 @@
 
   let ws = null;
 
-  // 클라이언트가 관리하는 현재 참가자 맵 (userId -> nickname)
+  // client state: userId -> nickname
   const users = new Map();
 
   function setStatus(text) {
@@ -57,19 +57,25 @@
       return;
     }
 
-    // 닉네임 기준으로 보기 좋게 정렬 (원하면 userId 기준으로 바꿔도 됨)
     const arr = Array.from(users.entries()).map(([userId, nickname]) => ({
       userId,
-      nickname: nickname || userId || "unknown",
+      nickname: nickname,
     }));
     arr.sort((a, b) => a.nickname.localeCompare(b.nickname, "ko"));
 
     userList.innerHTML = arr
-      .map(
-        (u) =>
-          `<li data-user-id="${encodeURIComponent(u.userId)}">${escapeHtml(u.nickname)}</li>`
-      )
+      .map((u) => `<li data-user-id="${encodeURIComponent(u.userId)}">${escapeHtml(u.nickname)}</li>`)
       .join("");
+  }
+
+  function setUsers(list) {
+    users.clear();
+    (Array.isArray(list) ? list : []).forEach((u) => {
+      const userId = u.userId;
+      const nickname = u.nickname;
+      if (userId) users.set(String(userId), nickname ? String(nickname) : "");
+    });
+    renderUsers();
   }
 
   function addUser(userId, nickname) {
@@ -105,7 +111,6 @@
   }
 
   function handleError(msg) {
-    // 서버가 {type:"ERROR", payload:{code,message}} 형태로 보내는 기준
     const code = msg?.payload?.code ?? msg?.code;
     const message = msg?.payload?.message ?? msg?.message ?? "오류가 발생했습니다.";
     console.warn("[WS] ERROR:", code, message);
@@ -127,13 +132,7 @@
 
     ws.onopen = () => {
       setStatus("WS: 연결됨");
-
-      // ✅ 서버가 {type,payload} 구조를 기대하므로 payload로 보냄
       send("ROOM_ENTER", { roomId });
-
-      // 참가자 목록은 ROOM_USERS가 없으니,
-      // 최소한 "내 정보"는 CONNECTED payload로 받으면 즉시 목록에 넣어보자.
-      // (서버에서 CONNECTED가 먼저 오고, 이후 USER_ENTER가 올 수도 있음)
     };
 
     ws.onmessage = (event) => {
@@ -142,13 +141,13 @@
 
       switch (msg.type) {
         case "CONNECTED": {
-          // payload: {login,userId,nickname,role,roomId}
-          const p = msg.payload || {};
-          if (p.login && p.userId) {
-            addUser(p.userId, p.nickname);
-          }
-          // (선택) 연결 로그
-          // appendSystemLog("WS 연결됨");
+          // 스냅샷을 반드시 받을 거면 여기서 addUser 안 해도 됨(중복 방지)
+          break;
+        }
+
+        case "ROOM_PLAYER_LIST": {
+          const list = msg.payload?.roomPlayerList ?? [];
+          setUsers(list);
           break;
         }
 
@@ -177,7 +176,6 @@
         }
 
         case "ROOM_EXIT": {
-          // 서버가 ACK로 보내면 받을 수 있음
           appendSystemLog("방에서 나갔습니다.");
           break;
         }
@@ -202,17 +200,13 @@
 
   btnLeave?.addEventListener("click", () => {
     send("ROOM_EXIT", {});
-    try {
-      ws?.close();
-    } catch (_) {}
+    try { ws?.close(); } catch (_) {}
     location.href = "/lobby";
   });
 
   btnSend?.addEventListener("click", () => {
     const text = chatInput?.value?.trim();
     if (!text) return;
-
-    // ✅ 서버는 payload.text를 읽으니까 payload로 보냄
     send("ROOM_CHAT", { text });
     chatInput.value = "";
   });
@@ -222,12 +216,9 @@
   });
 
   window.addEventListener("beforeunload", () => {
-    try {
-      ws?.close();
-    } catch (_) {}
+    try { ws?.close(); } catch (_) {}
   });
 
-  // 초기 렌더
   renderUsers();
   connect();
 })();

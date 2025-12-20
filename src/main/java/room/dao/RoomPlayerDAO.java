@@ -6,7 +6,7 @@ import room.dto.RoomPlayerDTO;
 
 public interface RoomPlayerDAO {
 
-	List<RoomPlayerDTO> getUserList(String roomId) throws Exception;
+	List<RoomPlayerDTO> getPlayerList(String roomId) throws Exception;
 
 	void enterIfAbsent(String roomId, String userId) throws Exception;
 
