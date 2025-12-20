@@ -47,6 +47,8 @@ public class UserInfoDAOImpl implements UserInfoDAO {
 				WHERE user_id = ?
 			""";
 
+		int updated;
+
 		try (PreparedStatement pstmt = conn.prepareStatement(query)) {
 			pstmt.setInt(1, userInfo.getTotalWin());
 			pstmt.setInt(2, userInfo.getTotalLose());
@@ -57,16 +59,18 @@ public class UserInfoDAOImpl implements UserInfoDAO {
 			pstmt.setTimestamp(7, userInfo.getLastGameDate());
 			pstmt.setString(8, userInfo.getUserId());
 
-			int updated = pstmt.executeUpdate();
-			if (updated == 0) {
-				throw new SQLException("사용자 통계 업데이트 실패: " + userInfo.getUserId());
-			}
+			updated = pstmt.executeUpdate();
 
-			System.out.println("[DAO] : " + userInfo.getUserId() + " 통계 업데이트 완료");
 		} catch (Exception e) {
-			System.out.println("[DAO] updateUserStats 실패");
-			throw new SQLException("사용자 통계 업데이트 실패", e);
+			System.err.println("[DAO] updateUserStats 실패");
+			throw new SQLException("사용자 통계 업데이트 SQL 실패", e);
 		}
+
+		if (updated == 0) {
+			throw new SQLException("사용자 통계 업데이트 실패: 대상 사용자를 찾을 수 없음 - " + userInfo.getUserId());
+		}
+		
+		System.out.println("[DAO] : " + userInfo.getUserId() + " 통계 업데이트 완료");
 	}
 
 	private UserInfoVo mapRow(ResultSet rs) throws SQLException {

@@ -10,6 +10,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonSyntaxException;
 
 import login.vo.UserInfoVo;
 import record.dto.GameResultDTO;
@@ -83,10 +84,38 @@ public class GameResultController extends HttpServlet {
 	private void handleSaveGameResult(HttpServletRequest req, HttpServletResponse res) throws IOException {
 		System.out.println("[Controller] 게임 결과 저장 요청 받음");
 
-		GameResultSaveRequest body = gson.fromJson(req.getReader(), GameResultSaveRequest.class);
+		GameResultSaveRequest body;
 
-		if (body == null || body.getGameId() == null || body.getResults() == null) {
-			sendError(res, 400, "잘못된 데이터입니다.");
+		try {
+			body = gson.fromJson(req.getReader(), GameResultSaveRequest.class);
+		} catch (JsonSyntaxException e) {
+			System.err.println("[Controller] JSON 파싱 객체: " + e.getMessage());
+			sendError(res, 400, "잘못된 JSON 형식입니다.");
+			return;
+		}
+
+		if (body == null) {
+			sendError(res, 400, "요청 본문이 비어있습니다.");
+			return;
+		}
+
+		if (body.getGameId() == null || body.getGameId().trim().isEmpty()) {
+			sendError(res, 400, "gameId는 필수입니다.");
+			return;
+		}
+
+		if (body.getRoomId() == null || body.getRoomId().trim().isEmpty()) {
+			sendError(res, 400, "roomId는 필수입니다.");
+			return;
+		}
+
+		if (body.getPlayType() == null || body.getPlayType().trim().isEmpty()) {
+			sendError(res, 400, "playType은 필수입니다.");
+			return;
+		}
+
+		if (body.getResults() == null || body.getResults().isEmpty()) {
+			sendError(res, 400, "게임 결과(results)가 비어있습니다.");
 			return;
 		}
 
@@ -131,8 +160,6 @@ public class GameResultController extends HttpServlet {
 	 */
 	private void sendSuccess(HttpServletResponse res, Object data) throws IOException {
 		res.setStatus(200);
-		res.setContentType("application/json; charset=UTF-8");
-
 		ApiResponse response = new ApiResponse(true, data, null);
 		res.getWriter().write(gson.toJson(response));
 	}
@@ -142,8 +169,6 @@ public class GameResultController extends HttpServlet {
 	 */
 	private void sendError(HttpServletResponse res, int statusCode, String message) throws IOException {
 		res.setStatus(statusCode);
-		res.setContentType("application/json; charset=UTF-8");
-
 		ApiResponse response = new ApiResponse(false, null, message);
 		res.getWriter().write(gson.toJson(response));
 	}
