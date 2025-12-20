@@ -62,7 +62,7 @@ public class UserInfoDAOImpl implements UserInfoDAO {
 				throw new SQLException("사용자 통계 업데이트 실패: " + userInfo.getUserId());
 			}
 
-			System.out.println("[DAO] : " + userInfo.getUserId() + " 통걔 업데이트 완료");
+			System.out.println("[DAO] : " + userInfo.getUserId() + " 통계 업데이트 완료");
 		} catch (Exception e) {
 			System.out.println("[DAO] updateUserStats 실패");
 			throw new SQLException("사용자 통계 업데이트 실패", e);
@@ -78,7 +78,7 @@ public class UserInfoDAOImpl implements UserInfoDAO {
 			.totalDraw(rs.getInt("total_draw"))
 			.currentStreak(rs.getInt("current_streak"))
 			.maxWinStreak(rs.getInt("max_win_streak"))
-			.winRate(rs.getInt("win_rate"))
+			.winRate(rs.getDouble("win_rate"))
 			.coin(rs.getInt("coin"))
 			.lastGameDate(rs.getTimestamp("last_game_date"))
 			.build();
