@@ -30,6 +30,7 @@ public class SingleGameServiceImpl implements SingleGameService {
 
 	@Override
 	public void onOpen(Session session) throws Exception {
+		// 방 정보 받아오기
 		if (players.size() >= 2) {
 			session.close();
 			return;
@@ -64,6 +65,8 @@ public class SingleGameServiceImpl implements SingleGameService {
 			for (Session s : players) {
 				s.getBasicRemote().sendText(
 					"{ \"type\":\"SINGLE_GIVEUP\", \"losercolor\":" + (loserIdx + 1) + "}");
+				/*s.getBasicRemote().sendText(
+				 *  {gameId, roomeId, userId, stonecolor, gameresult}*/
 			}
 			return;
 		}
@@ -97,6 +100,8 @@ public class SingleGameServiceImpl implements SingleGameService {
 			for (Session s : players) {
 				s.getBasicRemote().sendText(
 					"{ \"type\":\"SINGLE_WIN\", \"color\":" + wincolor + " }");
+				/*s.getBasicRemote().sendText(
+				 *  {gameId, roomeId, userId, stonecolor, gameresult}*/
 			}
 			return;
 		}
@@ -134,6 +139,8 @@ public class SingleGameServiceImpl implements SingleGameService {
 					try {
 						s.getBasicRemote().sendText(
 							"{ \"type\":\"SINGLE_GIVEUP\", \"losercolor\":" + lose + "}");
+						/*s.getBasicRemote().sendText(
+						 *  {gameId, roomeId, userId, stonecolor, gameresult}*/
 					} catch (Exception e) {}
 				}
 				return;
