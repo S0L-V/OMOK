@@ -54,7 +54,6 @@ public class RoomWebSocketService {
 			"nickname", sessionContext.getNickname(session)));
 
 		try {
-			System.out.println("[RoomWS] Broadcast Player List TRY!");
 			broadcastRoomPlayerList(roomId);
 		} catch (Exception e) {
 			System.out.println("[RoomWS] Broadcast Player List FAIL");
