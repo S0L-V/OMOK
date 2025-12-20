@@ -129,27 +129,6 @@ public class LobbyWebSocket {
 					break;
 				}
 
-				case "ROOM_ENTER": {
-					String roomId = Parser.asString(payload.get("roomId"));
-					if (roomId == null || roomId.isBlank()) {
-						service.sendIfOpen(session, "ERROR", Map.of(
-							"code", "MISSING_ROOM_ID",
-							"message", "roomId가 없습니다."));
-						return;
-					}
-					sessionContext.enterRoom(session, roomId);
-
-					service.sendIfOpen(session, "ROOM_ENTER", Map.of(
-						"roomId", roomId));
-					break;
-				}
-
-				case "ROOM_EXIT": {
-					sessionContext.leaveRoom(session);
-					service.sendIfOpen(session, "ROOM_EXIT", Map.of());
-					break;
-				}
-
 				default:
 					service.sendIfOpen(session, "ERROR", Map.of(
 						"code", "UNSUPPORTED_TYPE",
