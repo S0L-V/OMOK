@@ -15,6 +15,8 @@ import javax.websocket.server.ServerEndpoint;
 
 import com.google.gson.JsonSyntaxException;
 
+import config.WebSocketConfig;
+import session.SessionContext;
 import util.Parser;
 
 /**
@@ -37,15 +39,15 @@ import util.Parser;
  * </p>
  *
  * <p>
- * 연결 시 HttpSession(로그인 세션)을 {@link LobbyWebSocketConfig}를 통해 주입받아
+ * 연결 시 HttpSession(로그인 세션)을 {@link WebSocketConfig}를 통해 주입받아
  * WebSocket 세션 컨텍스트에 연결한다.
  * </p>
  */
 
-@ServerEndpoint(value = "/ws/lobby", configurator = LobbyWebSocketConfig.class)
+@ServerEndpoint(value = "/ws/lobby", configurator = WebSocketConfig.class)
 public class LobbyWebSocket {
 
-	private static final LobbySessionContext sessionContext = LobbySessionContext.getInstance();
+	private static final SessionContext sessionContext = SessionContext.getInstance();
 	private final LobbyWebSocketService service = new LobbyWebSocketService();
 
 	@OnOpen

@@ -1,4 +1,4 @@
-package lobby.ws;
+package session;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -6,18 +6,15 @@ import java.util.concurrent.ConcurrentHashMap;
 import javax.servlet.http.HttpSession;
 import javax.websocket.Session;
 
-import lobby.dto.ContextDTO;
-import lobby.dto.Role;
+public class SessionContext {
 
-public class LobbySessionContext {
+	private static final SessionContext INSTANCE = new SessionContext();
 
-	private static final LobbySessionContext INSTANCE = new LobbySessionContext();
-
-	public static LobbySessionContext getInstance() {
+	public static SessionContext getInstance() {
 		return INSTANCE;
 	}
 
-	private LobbySessionContext() {}
+	private SessionContext() {}
 
 	private final Map<String, ContextDTO> contexts = new ConcurrentHashMap<>();
 
