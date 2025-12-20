@@ -30,7 +30,7 @@
 		</tr>
 	</thead>
 
-	<tbody>
+	<tbody id="room-tbody">
 	<c:choose>
 		<c:when test="${empty roomList}">
 			<tr>
@@ -73,6 +73,6 @@
 	</c:choose>
 	</tbody>
 </table>
-
+<script src="${pageContext.request.contextPath}/static/lobby/lobby.js"></script>
 </body>
 </html>
