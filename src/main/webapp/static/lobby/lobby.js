@@ -3,7 +3,7 @@
 
  function buildLobbyWsUrl() {
     const protocol = location.protocol === "https:" ? "wss://" : "ws://";
-    return protocol + location.host + "/ws";
+    return protocol + location.host + "/ws/lobby";
   }
 
   /* =========================

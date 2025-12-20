@@ -6,7 +6,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import javax.servlet.http.HttpSession;
 import javax.websocket.Session;
 
-import login.dto.LoginKakaoUserInfoDTO;
 import room.dto.ContextDTO;
 import room.dto.Role;
 
@@ -20,7 +19,6 @@ public class LobbySessionContext {
 
 	private LobbySessionContext() {}
 
-	/** wsSessionId -> Context */
 	private final Map<String, ContextDTO> contexts = new ConcurrentHashMap<>();
 
 	public void connectSession(Session wsSession, HttpSession httpSession) {
@@ -32,14 +30,17 @@ public class LobbySessionContext {
 		ContextDTO context = new ContextDTO();
 		context.setWsSessionId(wsSessionId);
 		context.setHttpSession(httpSession);
-		context.setRole(Role.GUEST); // 기본값
+		context.setRole(Role.GUEST);
+		context.setLogin(false);
 
 		if (httpSession != null) {
-			Object loginUser = httpSession.getAttribute("loginUser");
-			if (loginUser instanceof LoginKakaoUserInfoDTO user) {
+			Object userIdObj = httpSession.getAttribute("loginUserId");
+			Object nickObj = httpSession.getAttribute("loginNickname");
+
+			if (userIdObj != null) {
 				context.setLogin(true);
-				context.setUserId(user.getUserId());
-				context.setNickname(user.getNickname());
+				context.setUserId(String.valueOf(userIdObj));
+				context.setNickname(nickObj != null ? String.valueOf(nickObj) : null);
 				context.setRole(Role.USER);
 			}
 		}

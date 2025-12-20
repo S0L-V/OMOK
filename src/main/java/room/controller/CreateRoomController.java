@@ -7,6 +7,7 @@ import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 
 import room.dao.RoomDAO;
 import room.dao.RoomDAOImpl;
@@ -17,8 +18,25 @@ public class CreateRoomController extends HttpServlet {
 
 	protected void doPost(HttpServletRequest request, HttpServletResponse response)
 		throws ServletException, IOException {
+		HttpSession session = request.getSession(false);
 
-		String hostUserId = request.getParameter("hostUserId");
+		if (session == null) {
+			response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "로그인이 필요합니다.");
+			return;
+		}
+
+		String hostUserId = (String)session.getAttribute("loginUserId");
+		if (hostUserId == null || hostUserId.isBlank()) {
+			response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "로그인이 필요합니다.");
+			return;
+		}
+
+		System.out.println("session = " + session);
+		System.out.println("loginUserId = " + (session == null ? null : session.getAttribute("loginUserId")));
+		System.out.println("loginNickname = " + (session == null ? null : session.getAttribute("loginNickname")));
+
+		String hostUserId = (String)session.getAttribute("loginUserId");
+
 		String roomName = request.getParameter("roomName");
 		String roomPwd = request.getParameter("roomPwd");
 		String isPublic = request.getParameter("isPublic");
