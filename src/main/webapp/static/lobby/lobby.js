@@ -1,14 +1,11 @@
 (() => {
   let lobbyWs = null;
 
- function buildLobbyWsUrl() {
+  function buildLobbyWsUrl() {
     const protocol = location.protocol === "https:" ? "wss://" : "ws://";
     return protocol + location.host + "/ws/lobby";
   }
 
-  /* =========================
-   * Connect
-   * ========================= */
   function connectLobby() {
     const url = buildLobbyWsUrl();
     console.log("[LobbyWS] connecting:", url);
@@ -17,29 +14,27 @@
 
     lobbyWs.onopen = () => {
       console.log("[LobbyWS] open");
-      sendLobby({ type: "LOBBY_ENTER" });
+      sendLobby({ type: "LOBBY_ENTER", payload: {} });
     };
 
     lobbyWs.onmessage = (event) => {
       const msg = safeJsonParse(event.data);
       if (!msg) return;
-
+	  const type = String(msg.type || "").trim();
       switch (msg.type) {
         case "CONNECTED":
-          console.log("[LobbyWS] CONNECTED");
+          console.log("[LobbyWS] CONNECTED", msg.payload);
           break;
 
-        case "INIT_ROOM_LIST":
-          renderRoomList(msg.rooms || []);
+        case "ROOM_LIST": {
+          const rooms = msg.payload?.rooms || [];
+          renderRoomList(rooms);
           break;
-
-        case "ROOM_LIST_UPDATE":
-          renderRoomList(msg.rooms || []);
-          break;
+        }
 
         case "ERROR":
-          console.warn("[LobbyWS] ERROR:", msg.code, msg.message);
-          alert(msg.message || "오류가 발생했습니다.");
+          console.warn("[LobbyWS] ERROR:", msg.payload);
+          alert(msg.payload?.message || "오류가 발생했습니다.");
           break;
 
         default:
@@ -47,38 +42,19 @@
       }
     };
 
-    lobbyWs.onclose = (event) => {
-      console.warn("[LobbyWS] close:", event.code, event.reason);
-    };
-
-    lobbyWs.onerror = (event) => {
-      console.warn("[LobbyWS] error:", event);
-    };
+    lobbyWs.onclose = (event) => console.warn("[LobbyWS] close:", event.code, event.reason);
+    lobbyWs.onerror = (event) => console.warn("[LobbyWS] error:", event);
   }
 
-  /* =========================
-   * Send
-   * ========================= */
   function sendLobby(obj) {
     if (!lobbyWs || lobbyWs.readyState !== WebSocket.OPEN) return;
     lobbyWs.send(JSON.stringify(obj));
   }
 
-  /* =========================
-   * Utils
-   * ========================= */
   function safeJsonParse(raw) {
-    try {
-      return JSON.parse(raw);
-    } catch (e) {
-      console.warn("[LobbyWS] invalid json:", raw);
-      return null;
-    }
+    try { return JSON.parse(raw); } catch { return null; }
   }
 
-  /* =========================
-   * UI
-   * ========================= */
   function renderRoomList(rooms) {
     const tbody = document.querySelector("#room-tbody");
     if (!tbody) return;
@@ -90,53 +66,41 @@
 
     tbody.innerHTML = rooms.map(toRowHtml).join("");
 
-    tbody.querySelectorAll(".btn-join").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        const roomId = btn.dataset.roomId;
-        if (!roomId) return;
-
-        location.href = `/room?roomId=${encodeURIComponent(roomId)}`;
+    tbody.querySelectorAll(".enter-room-form").forEach((form) => {
+      form.addEventListener("submit", (e) => {
+        if (!IS_LOGIN) {
+          e.preventDefault();
+          alert("로그인이 필요합니다.");
+        }
       });
     });
   }
 
   function toRowHtml(r) {
-    const roomId = r.roomId ?? "";
+    const roomId = r.id ?? r.roomId ?? "";
     const roomName = r.roomName ?? "-";
-    const isPublic = normalizePublic(r);
-    const playType = normalizePlayType(r);
-    const { current, total } = normalizeCount(r);
+    const isPublic = (String(r.isPublic) === "1") ? "공개" : "비공개 🔒";
+    const playType = (String(r.playType) === "0") ? "개인전" : "팀전";
+    const current = r.currentUserCnt ?? 0;
+    const total = r.totalUserCnt ?? 0;
+
+    const disabledAttr = IS_LOGIN ? "" : "disabled";
+    const titleAttr = IS_LOGIN ? "" : `title="로그인이 필요합니다."`;
 
     return `
       <tr>
         <td>${escapeHtml(roomName)}</td>
         <td>${isPublic}</td>
-        <td>${escapeHtml(playType)}</td>
-        <td>${current}/${total}</td>
+        <td>${playType}</td>
+        <td>${current} / ${total}</td>
         <td>
-          <button class="btn-join" data-room-id="${escapeHtml(roomId)}">
-            입장
-          </button>
+          <form class="enter-room-form" action="${CTX}/room/enter"" method="post">
+            <input type="hidden" name="roomId" value="${escapeHtml(roomId)}" />
+            <button type="submit" ${disabledAttr} ${titleAttr}>입장</button>
+          </form>
         </td>
       </tr>
     `;
-  }
-
-  function normalizePublic(r) {
-    return r.isPublic === "0" ? "공개" : "비공개";
-  }
-
-  function normalizePlayType(r) {
-    if (r.playType === "0") return "개인전";
-    if (r.playType === "1") return "팀전";
-    return "-";
-  }
-
-  function normalizeCount(r) {
-    return {
-      current: r.currentUserCnt ?? 0,
-      total: r.totalUserCnt ?? 0,
-    };
   }
 
   function escapeHtml(str) {
@@ -148,17 +112,9 @@
       .replaceAll("'", "&#039;");
   }
 
-  /* =========================
-   * Cleanup
-   * ========================= */
   window.addEventListener("beforeunload", () => {
-    try {
-      lobbyWs?.close();
-    } catch (_) {}
+    try { lobbyWs?.close(); } catch (_) {}
   });
 
-  /* =========================
-   * Start
-   * ========================= */
   connectLobby();
 })();

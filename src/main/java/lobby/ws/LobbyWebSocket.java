@@ -1,7 +1,9 @@
-package room.ws;
+package lobby.ws;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 import javax.servlet.http.HttpSession;
 import javax.websocket.CloseReason;
@@ -15,44 +17,42 @@ import javax.websocket.server.ServerEndpoint;
 
 import com.google.gson.JsonSyntaxException;
 
+import config.WebSocketConfig;
+import session.SessionContext;
 import util.Parser;
 
 /**
  * 로비 WebSocket 엔드포인트
- * 
+ *
  * 모든 메시지는 다음 구조를 따른다.
- * <pre>
- * { "type": "...", "payload": { ... } }
- * </pre>
- * </p>
+ * {
+ *   "type": "...",
+ *   "payload": { ... }
+ * }
  *
- * <p>
  * 지원하는 클라이언트 요청(type):
- * <ul>
- *   <li>{@code LOBBY_ENTER} : 로비 진입(방 목록 전송)</li>
- *   <li>{@code ROOM_LIST} : 방 목록 재요청</li>
- *   <li>{@code ROOM_ENTER} : 방 입장(roomId 필요)</li>
- *   <li>{@code ROOM_EXIT} : 방 퇴장</li>
- * </ul>
- * </p>
+ * - LOBBY_ENTER : 로비 진입(방 목록 전송)
+ * - ROOM_LIST   : 방 목록 재요청
  *
- * <p>
- * 연결 시 HttpSession(로그인 세션)을 {@link LobbyWebSocketConfig}를 통해 주입받아
- * WebSocket 세션 컨텍스트에 연결한다.
- * </p>
+ * 서버에서 DB 변경 발생 시 (방 생성/입장/퇴장/삭제 등)
+ * broadcastRoomList()를 호출하면 로비 접속자 전체에게 방 목록이 갱신된다.
  */
-
-@ServerEndpoint(value = "/ws/lobby", configurator = LobbyWebSocketConfig.class)
+@ServerEndpoint(value = "/ws/lobby", configurator = WebSocketConfig.class)
 public class LobbyWebSocket {
 
-	private static final LobbySessionContext sessionContext = LobbySessionContext.getInstance();
-	private final LobbyWebSocketService service = new LobbyWebSocketService();
+	private static final SessionContext sessionContext = SessionContext.getInstance();
+	private static final LobbyWebSocketService service = new LobbyWebSocketService();
+
+	/** 현재 로비에 연결된 WebSocket 세션들 */
+	private static final Set<Session> lobbySessions = ConcurrentHashMap.newKeySet();
 
 	@OnOpen
 	public void onOpen(Session session, EndpointConfig config) {
-		HttpSession httpSession = (HttpSession)config.getUserProperties().get(HttpSession.class.getName());
+		HttpSession httpSession = (HttpSession)config.getUserProperties()
+			.get(HttpSession.class.getName());
 
 		sessionContext.connectSession(session, httpSession);
+		lobbySessions.add(session);
 
 		System.out.println(
 			"[LobbyWS] CONNECTED wsSessionId=" + session.getId()
@@ -60,17 +60,14 @@ public class LobbyWebSocket {
 				+ " nick=" + sessionContext.getNickname(session)
 				+ " role=" + sessionContext.getRole(session));
 
+		// CONNECTED 응답
 		Map<String, Object> payload = new HashMap<>();
 		payload.put("login", sessionContext.isLogin(session));
 		payload.put("userId", sessionContext.getUserId(session));
 		payload.put("nickname", sessionContext.getNickname(session));
 		payload.put("role", sessionContext.getRole(session).name());
 
-		Map<String, Object> message = new HashMap<>();
-		message.put("type", "CONNECTED");
-		message.put("payload", payload);
-
-		session.getAsyncRemote().sendText(Parser.toJson(message));
+		sendRawIfOpen(session, "CONNECTED", payload);
 	}
 
 	@OnClose
@@ -79,6 +76,7 @@ public class LobbyWebSocket {
 			+ " code=" + reason.getCloseCode()
 			+ " reason=" + reason.getReasonPhrase());
 
+		lobbySessions.remove(session);
 		sessionContext.disconnectSession(session);
 	}
 
@@ -88,20 +86,11 @@ public class LobbyWebSocket {
 		thr.printStackTrace();
 
 		if (session != null) {
+			lobbySessions.remove(session);
 			sessionContext.disconnectSession(session);
 		}
 	}
 
-	/**
-	 * 클라이언트로부터 수신한 메시지를 type 기준으로 분기 처리한다.
-	 *
-	 * <p>
-	 * 유효하지 않은 메시지에 대해서는 {@code ERROR} 타입으로 응답한다.
-	 * </p>
-	 *
-	 * @param session WebSocket 세션
-	 * @param text JSON 문자열 메시지
-	 */
 	@OnMessage
 	public void onMessage(Session session, String text) {
 		try {
@@ -118,33 +107,13 @@ public class LobbyWebSocket {
 
 			switch (type) {
 				case "LOBBY_ENTER": {
+					System.out.println("[LobbyWS] LOBBY_ENTER from " + session.getId());
 					service.sendRoomList(session);
 					break;
 				}
 
 				case "ROOM_LIST": {
 					service.sendRoomList(session);
-					break;
-				}
-
-				case "ROOM_ENTER": {
-					String roomId = Parser.asString(payload.get("roomId"));
-					if (roomId == null || roomId.isBlank()) {
-						service.sendIfOpen(session, "ERROR", Map.of(
-							"code", "MISSING_ROOM_ID",
-							"message", "roomId가 없습니다."));
-						return;
-					}
-					sessionContext.enterRoom(session, roomId);
-
-					service.sendIfOpen(session, "ROOM_ENTER", Map.of(
-						"roomId", roomId));
-					break;
-				}
-
-				case "ROOM_EXIT": {
-					sessionContext.leaveRoom(session);
-					service.sendIfOpen(session, "ROOM_EXIT", Map.of());
 					break;
 				}
 
@@ -163,6 +132,46 @@ public class LobbyWebSocket {
 			service.sendIfOpen(session, "ERROR", Map.of(
 				"code", "SERVER_ERROR",
 				"message", "요청 처리 실패: " + e.getMessage()));
+		}
+	}
+
+	/**
+	 * DB 상태가 변경되었을 때 호출하면, 로비 접속자 전체에게 방 목록을 갱신 전송한다.
+	 *
+	 * 호출 위치 예시:
+	 * - 방 생성 성공 직후
+	 * - 방 입장/퇴장 처리 직후 (인원수 변경)
+	 * - 방 삭제 처리 직후
+	 */
+	public static void broadcastRoomList() {
+		System.out.println("[LobbyWS] broadcastRoomList sessions=" + lobbySessions.size());
+		for (Session s : lobbySessions) {
+			try {
+				service.sendRoomList(s); // DB에서 최신 조회 후 ROOM_LIST 전송
+			} catch (Exception e) {
+				System.err.println("[LobbyWS] broadcast failed wsSessionId=" + (s != null ? s.getId() : "null"));
+				e.printStackTrace();
+			}
+		}
+	}
+
+	/**
+	 * LobbyWebSocketService를 거치지 않고도 간단 payload 전송이 필요할 때 사용.
+	 * (CONNECTED 같은 초기 메시지 용)
+	 */
+	private void sendRawIfOpen(Session s, String type, Map<String, Object> payload) {
+		if (s == null || !s.isOpen())
+			return;
+
+		Map<String, Object> message = new HashMap<>();
+		message.put("type", type);
+		message.put("payload", payload);
+
+		try {
+			s.getAsyncRemote().sendText(Parser.toJson(message));
+		} catch (Exception e) {
+			System.err.println("[LobbyWS] send failed");
+			e.printStackTrace();
 		}
 	}
 }
