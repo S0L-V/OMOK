@@ -31,9 +31,35 @@
 	
 	drawBoard();
 	
-	let ws = new WebSocket(
-	    "ws://localhost:8081/omok"
-	);
+	const params = new URLSearchParams(window.location.search);
+	const playType = params.get("playType");  // "single" | "multi"
+	const roomId = params.get("roomId");      // "게임_아이디"
+
+	if (!roomId) {
+	  alert("roomId가 없습니다. URL에 roomId를 포함하세요.");
+	  throw new Error("Missing roomId");
+	}
+
+	if (playType !== "single") {
+	  // single.jsp에서만 돌린다면 이 체크는 선택
+	  console.warn("playType이 single이 아닙니다:", playType);
+	}
+
+	const wsProtocol = (location.protocol === "https:") ? "wss" : "ws";
+	const contextPath = "<%= request.getContextPath() %>";
+
+	const wsUrl =
+		wsProtocol + "://" +
+	    location.host +
+	    contextPath +
+	    "/single?roomId=" +
+	    encodeURIComponent(roomId);
+	  
+	const ws = new WebSocket(wsUrl);
+	
+	//let ws = new WebSocket(
+	//    "ws://localhost:8081/omok"
+	//);
 	
 	
 	ws.onopen = () => log("서버 연결");
@@ -59,7 +85,9 @@
 	    }
 	
 	    if(data.type === "delay") {
-	    	passDiv.innerText = (data.delayColor === 1 ? "흑돌 시간초과로 패스입니다! 다음차례: 백돌" : "백돌 시간초과로 패스입니다! 다음차례: 흑돌");
+	    	clearInterval(timer);
+	    	passDiv.innerText = (data.delayColor === 1 ? "흑돌 시간초과로 패스입니다!" : "백돌 시간초과로 패스입니다!");
+	    	timerDiv.innerText = (data.delayColor === 1 ? "다음차례: 백돌" : "다음차례: 흑돌");
 	    }
 	    
 	    if (data.type === "SINGLE_STONE") {
