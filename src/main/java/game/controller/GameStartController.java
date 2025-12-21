@@ -15,6 +15,7 @@ import room.dao.RoomDAO;
 import room.dao.RoomDAOImpl;
 import room.dao.RoomPlayerDAO;
 import room.dao.RoomPlayerDAOImpl;
+import room.ws.RoomWebSocketService;
 
 @WebServlet("/game/start")
 public class GameStartController extends HttpServlet {
@@ -22,6 +23,7 @@ public class GameStartController extends HttpServlet {
 
 	private final RoomDAO roomDao = new RoomDAOImpl();
 	private final RoomPlayerDAO roomPlayerDao = new RoomPlayerDAOImpl();
+	private final RoomWebSocketService service = new RoomWebSocketService();
 
 	@Override
 	protected void doPost(HttpServletRequest request, HttpServletResponse response)
@@ -59,15 +61,27 @@ public class GameStartController extends HttpServlet {
 			int updated = roomPlayerDao.updatePlayersToInGame(roomId);
 
 			System.out.println("[GameStart] roomId=" + roomId + " updatedPlayers=" + updated);
-			System.out.println(request.getContextPath() + "/game/single.jsp");
-			if ("0".equals(playType)) {
+
+			boolean isValidSingleGame = "0".equals(playType) && updated == 2;
+			boolean isValidMultiGame = "1".equals(playType) && updated == 4;
+			if (isValidSingleGame || isValidMultiGame) {
+				service.broadcastGameStart(roomId, hostUserId, playType);
+			} else {
+				response.sendError(HttpServletResponse.SC_FORBIDDEN, "참여 인원이 유효하지 않습니다.");
+				return;
+			}
+
+			if (isValidSingleGame) {
 				response.sendRedirect(
 					request.getContextPath() + "/game/single?roomId="
 						+ URLEncoder.encode(roomId, StandardCharsets.UTF_8));
-			} else if ("1".equals(playType)) {
+			} else if (isValidMultiGame) {
 				response.sendRedirect(
 					request.getContextPath() + "/game/multi?roomId="
 						+ URLEncoder.encode(roomId, StandardCharsets.UTF_8));
+			} else {
+				response.sendError(HttpServletResponse.SC_FORBIDDEN, "참여 인원이 유효하지 않습니다.");
+				return;
 			}
 
 		} catch (Exception e) {
