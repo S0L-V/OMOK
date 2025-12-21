@@ -1,4 +1,4 @@
-package room.controller;
+package lobby.controller;
 
 import java.io.IOException;
 
@@ -9,6 +9,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
+import lobby.ws.LobbyWebSocket;
 import room.dao.RoomDAO;
 import room.dao.RoomDAOImpl;
 
@@ -26,6 +27,7 @@ public class CreateRoomController extends HttpServlet {
 		}
 
 		String hostUserId = (String)session.getAttribute("loginUserId");
+
 		if (hostUserId == null || hostUserId.isBlank()) {
 			response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "로그인이 필요합니다.");
 			return;
@@ -34,8 +36,6 @@ public class CreateRoomController extends HttpServlet {
 		System.out.println("session = " + session);
 		System.out.println("loginUserId = " + (session == null ? null : session.getAttribute("loginUserId")));
 		System.out.println("loginNickname = " + (session == null ? null : session.getAttribute("loginNickname")));
-
-		String hostUserId = (String)session.getAttribute("loginUserId");
 
 		String roomName = request.getParameter("roomName");
 		String roomPwd = request.getParameter("roomPwd");
@@ -51,6 +51,8 @@ public class CreateRoomController extends HttpServlet {
 				roomPwd,
 				isPublic,
 				playType);
+
+			LobbyWebSocket.broadcastRoomList();
 
 			response.sendRedirect(request.getContextPath() + "/lobby");
 		} catch (Exception e) {

@@ -1,4 +1,4 @@
-package room.dto;
+package session;
 
 import javax.servlet.http.HttpSession;
 
