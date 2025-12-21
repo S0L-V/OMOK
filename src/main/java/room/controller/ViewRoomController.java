@@ -17,6 +17,7 @@ public class ViewRoomController extends HttpServlet {
 		throws ServletException, IOException {
 		try {
 			String roomId = request.getParameter("roomId");
+			String playType = request.getParameter("playType");
 
 			if (roomId == null) {
 				response.sendRedirect("/lobby");
@@ -24,6 +25,7 @@ public class ViewRoomController extends HttpServlet {
 			}
 
 			request.setAttribute("roomId", roomId);
+			request.setAttribute("playType", playType);
 
 			request.getRequestDispatcher("/WEB-INF/views/room.jsp").forward(request, response);
 			return;

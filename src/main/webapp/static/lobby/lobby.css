@@ -1,65 +1,315 @@
-@charset "UTF-8";
-
-h2 { margin-bottom: 12px; }
-
-table {
-  width: 100%;
-  border-collapse: collapse;
+/* 기본 리셋 */
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, "Noto Sans KR", Arial, sans-serif;
+  background: #f5f7fb;
+  color: #111827;
 }
 
-th, td {
-  border: 1px solid #ccc;
-  padding: 8px;
-  text-align: center;
-}
-
-th {
-  background: #f2f2f2;
-}
-
+/* 상단바 */
 .top-bar {
-  position: absolute;
-  top: 16px;
-  right: 24px;
+  background: #0b1424;
+  color: #fff;
+  padding: 22px 28px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.brand {
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
 }
 
 .auth-box {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
 }
 
 .nickname {
-  font-weight: bold;
+  font-weight: 600;
+  opacity: 0.95;
 }
 
 .btn {
-  padding: 6px 12px;
-  border-radius: 6px;
-  text-decoration: none;
-  font-size: 14px;
-}
-
-.btn-kakao {
-  background-color: #FEE500;
-  color: #000;
-  font-weight: bold;
-}
-
-.btn-logout {
-  background-color: #eee;
-  color: #333;
-}
-
-button {
-  padding: 10px 12px;
-  border: 1px solid #ccc;
-  background: #fff;
+  border: 1px solid rgba(255,255,255,0.25);
+  background: transparent;
+  color: #fff;
+  padding: 8px 12px;
   border-radius: 8px;
   cursor: pointer;
 }
 
-button:hover {
-  background: #f5f5f5;
+.btn:hover {
+  border-color: rgba(255,255,255,0.45);
 }
 
+.btn-logout {
+  border-color: rgba(255,255,255,0.35);
+}
+
+/* 전체 레이아웃 */
+.lobby-layout {
+  max-width: 1280px;
+  margin: 22px auto;
+  padding: 0 22px;
+  display: grid;
+  grid-template-columns: 1fr 360px;
+  gap: 22px;
+  align-items: start;
+}
+
+.lobby-left {
+  background: transparent;
+}
+
+/* 좌측 타이틀 */
+h2 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 800;
+}
+
+.subtext {
+  margin: 8px 0 18px;
+  color: #6b7280;
+  font-size: 14px;
+}
+
+/* 방 생성 버튼 */
+form[action*="/lobby/room/create"] button {
+  border: 1px solid #111827;
+  background: #111827;
+  color: #fff;
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+form[action*="/lobby/room/create"] button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* 테이블을 카드 리스트처럼 보이게 */
+table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0 14px; /* 행 간격 */
+}
+
+/* 헤더는 숨김(디자인용) */
+thead { display: none; }
+
+tbody tr {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 1px 0 rgba(17,24,39,0.03);
+}
+
+/* 테이블에서 border-radius가 먹히도록 */
+tbody tr td:first-child { border-top-left-radius: 12px; border-bottom-left-radius: 12px; }
+tbody tr td:last-child { border-top-right-radius: 12px; border-bottom-right-radius: 12px; }
+
+tbody td {
+  padding: 18px 16px;
+  vertical-align: middle;
+  border-top: 1px solid #e5e7eb;
+}
+tbody tr td { border-top: none; }
+
+/* 첫번째 칸(방 이름) 강조 */
+tbody td:nth-child(1) {
+  font-weight: 800;
+  font-size: 18px;
+}
+
+/* 공개/타입/인원 텍스트 */
+tbody td:nth-child(2),
+tbody td:nth-child(3),
+tbody td:nth-child(4) {
+  color: #6b7280;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* 입장 영역 */
+tbody td:nth-child(5) {
+  width: 140px;
+  text-align: right;
+}
+
+/* 입장 버튼이 JS로 생성되는 경우 대비 */
+tbody td:nth-child(5) button,
+tbody td:nth-child(5) a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 110px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: #9ca3af;
+  border: 1px solid #9ca3af;
+  color: #fff;
+  font-weight: 800;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+tbody td:nth-child(5) button:hover,
+tbody td:nth-child(5) a:hover {
+  filter: brightness(0.95);
+}
+
+/* 우측 로그인 카드 */
+.lobby-right .login-card {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 18px;
+  box-shadow: 0 1px 0 rgba(17,24,39,0.03);
+}
+
+.login-card h3 {
+  margin: 0 0 14px;
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.field {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.field label {
+  font-size: 12px;
+  color: #6b7280;
+  font-weight: 700;
+}
+
+.field input {
+  width: 100%;
+  padding: 12px 12px;
+  border-radius: 10px;
+  border: 1px solid #d1d5db;
+  outline: none;
+  font-size: 14px;
+}
+
+.field input:focus {
+  border-color: #111827;
+}
+
+.btn-primary {
+  width: 100%;
+  border: 1px solid #111827;
+  background: #111827;
+  color: #fff;
+  padding: 12px 14px;
+  border-radius: 10px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.btn-secondary {
+  width: 100%;
+  border: 1px solid #d1d5db;
+  background: #fff;
+  color: #111827;
+  padding: 12px 14px;
+  border-radius: 10px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.divider {
+  position: relative;
+  text-align: center;
+  margin: 14px 0;
+  color: #9ca3af;
+  font-weight: 800;
+  font-size: 12px;
+}
+
+.divider::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 1px;
+  background: #e5e7eb;
+  transform: translateY(-50%);
+}
+
+.divider span {
+  position: relative;
+  background: #fff;
+  padding: 0 10px;
+}
+
+.kakao-wide {
+  display: block;
+  width: 100%;
+  text-align: center;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: #FEE500;
+  color: #191919;
+  font-weight: 900;
+  text-decoration: none;
+  border: 1px solid rgba(0,0,0,0.08);
+}
+
+.signup-hint {
+  margin: 12px 0 0;
+  font-size: 13px;
+  color: #6b7280;
+  text-align: center;
+}
+
+.signup-hint a {
+  color: #111827;
+  font-weight: 900;
+  text-decoration: none;
+}
+
+/* 로그인 후 카드 */
+.profile-box {
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 14px;
+  margin-bottom: 12px;
+  background: #f9fafb;
+}
+
+.profile-name {
+  font-weight: 900;
+  font-size: 16px;
+}
+
+.profile-sub {
+  margin-top: 6px;
+  color: #6b7280;
+  font-size: 13px;
+}
+
+/* 반응형 */
+@media (max-width: 980px) {
+  .lobby-layout {
+    grid-template-columns: 1fr;
+  }
+
+  tbody td:nth-child(5) {
+    width: auto;
+    text-align: left;
+  }
+}

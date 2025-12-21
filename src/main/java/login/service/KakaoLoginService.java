@@ -89,7 +89,7 @@ public class KakaoLoginService {
 					: truncateNickname(rawNickname);
 
 				conn.commit();
-				return new LoginResult(userId, nickname, accessToken);
+				return new LoginResult(userId, email, nickname, accessToken);
 
 			} catch (Exception e) {
 				conn.rollback();
@@ -130,17 +130,23 @@ public class KakaoLoginService {
 
 	public static class LoginResult {
 		private final String userId;
+		private final String email;
 		private final String nickname;
 		private final String accessToken;
 
-		public LoginResult(String userId, String nickname, String accessToken) {
+		public LoginResult(String userId, String email, String nickname, String accessToken) {
 			this.userId = userId;
+			this.email = email;
 			this.nickname = nickname;
 			this.accessToken = accessToken;
 		}
 
 		public String getUserId() {
 			return userId;
+		}
+
+		public String getEmail() {
+			return email;
 		}
 
 		public String getNickname() {
