@@ -1,17 +1,25 @@
 package game.multi.service;
 
+import java.io.OutputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+
 import javax.websocket.Session;
+
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
+
 import game.multi.service.MultiGameService.SendJob;
 
 // 하나의 게임 방을 나타내는 객체
@@ -38,14 +46,19 @@ public class GameRoom {
     public GameRoom(String roomId) {
         this.roomId = roomId;
     }
+    
+    private final Map<Session, String> tempUserIdMap = new ConcurrentHashMap<>();
 
 	/**
 	 * 입장 처리
 	 * @param session
+	 * @param userId 
 	 * @return
 	 */
-	public synchronized List<SendJob> handleOpen(Session session) {
+	public synchronized List<SendJob> handleOpen(Session session, String userId) {
 		List<SendJob> out = new ArrayList<>();
+		
+		tempUserIdMap.put(session, userId);
 		
 		// 게임 시작 전이라면 끊긴 세션 정리
 		if (sessionList.size() < 4) {
@@ -91,9 +104,10 @@ public class GameRoom {
 				Session s = sessionList.get(i);
 				int color = (i % 2 == 0) ? 1 : 2; // 0,2=흑 / 1,3=백
 				int team = (i % 2 == 0) ? 0 : 1;
+				String uId = tempUserIdMap.get(s);
 
-				// Player 객체 생성 및 저장
-				Player p = new Player(s, i, team, color);
+				// Player 객체 생성
+				Player p = new Player(s, uId, i, team, color);
 				playersMap.put(s.getId(), p);
 
 				// 시작 메시지 JSON 생성
@@ -137,6 +151,8 @@ public class GameRoom {
 					
 					// 팀 전멸 체크
 					if (isTeamDead(p.getTeam())) {
+						int winTeam = (p.getTeam() == 0) ? 1 : 0;
+						saveGameResult(winTeam);
 						endGame(out, (p.getTeam() == 0 ? "흑돌" : "백돌") + " 팀 전원 기권패!");
 					} else {
 						// 1:2 상황으로 진행
@@ -200,7 +216,10 @@ public class GameRoom {
 				if (turnTask != null) {
 					turnTask.cancel(true);
 				}
-
+				
+				int winTeam = (winColor == 1) ? 0 : 1;
+				saveGameResult(winTeam);
+				
 				JsonObject winJson = new JsonObject();
 				winJson.addProperty("type", "MULTI_WIN");
 				winJson.addProperty("color", winColor);
@@ -226,6 +245,7 @@ public class GameRoom {
 	 * @return
 	 */
 	public synchronized List<SendJob> handleClose(Session session) {
+		tempUserIdMap.remove(session);
 		List<SendJob> out = new ArrayList<>();
 		
 		if (gameOver) {
@@ -393,6 +413,58 @@ public class GameRoom {
 		json.addProperty("msg", msg);
 		return new SendJob(session, gson.toJson(json));
 	}
+	
+	// 게임 결과 API 저장 메서드
+	private void saveGameResult(int winTeam) {
+		try {
+			String gameId = UUID.randomUUID().toString();
+			StringBuilder resultsJson = new StringBuilder();
+			
+			boolean first = true;
+			for (Player p : playersMap.values()) {
+				if (!first) {
+					resultsJson.append(",");
+				}
+				first = false;
+				
+				String result = (p.getTeam() == winTeam) ? "W" : "L";
+				
+				resultsJson.append(String.format("""
+	                    {
+	                      "userId": "%s",
+	                      "stoneColor": "%d",
+	                      "gameResult": "%s"
+	                    }
+	                    """, p.getUserId(), p.getColor(), result));
+	        }
+			String jsonPayload = String.format("""
+	                {
+	                  "gameId": "%s",
+	                  "roomId": "%s",
+	                  "playType": "1", 
+	                  "results": [ %s ]
+	                }
+	                """, gameId, roomId, resultsJson.toString()); // playType="1" (Multi)
+			
+			// API 전송
+            URL url = new URL("http://localhost:8089/record/save"); 
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            conn.setRequestMethod("POST");
+            conn.setRequestProperty("Content-Type", "application/json");
+            conn.setDoOutput(true);
+
+            try (OutputStream os = conn.getOutputStream()) {
+                os.write(jsonPayload.getBytes(StandardCharsets.UTF_8));
+            }
+
+            int code = conn.getResponseCode();
+            System.out.println("게임 결과 저장 완료 (" + code + ")");
+            
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.err.println("게임 결과 저장 실패");
+        }
+    }
 
 	// 타이머 시작
 	private void startTurnTimer() {
