@@ -15,4 +15,11 @@ public interface RoomDAO {
 		String isPublic,
 		String playType) throws Exception;
 
+	/**
+	 * 방의 host userId 조회
+	 * @param roomId 방 ID
+	 * @return host userId (없으면 null)
+	 */
+	String getHostUserId(String roomId) throws Exception;
+
 }

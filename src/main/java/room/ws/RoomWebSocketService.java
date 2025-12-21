@@ -96,6 +96,21 @@ public class RoomWebSocketService {
 		}
 	}
 
+	/**
+	 * 게임 시작 브로드캐스트
+	 * - 클라이언트는 GAME_START 수신 시 location.href로 이동
+	 */
+	public void broadcastGameStart(String roomId, String gameId, String playType) {
+		if (roomId == null || roomId.isBlank())
+			return;
+
+		Map<String, Object> payload = new HashMap<>();
+		payload.put("roomId", roomId);
+		payload.put("playType", playType); // "0"(개인전) / "1"(팀전)
+
+		broadcast(roomId, "GAME_START", payload);
+	}
+
 	private void broadcast(String roomId, String type, Map<String, Object> payload) {
 		Set<Session> sessions = roomRegistry.getSessions(roomId);
 		for (Session s : sessions) {
