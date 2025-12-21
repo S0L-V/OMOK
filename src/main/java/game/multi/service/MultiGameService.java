@@ -26,7 +26,7 @@ public class MultiGameService {
 	private static int turn = 0; // 0, 1, 2, 3 인덱스
 	private static int[][] board = new int[15][15];
 	private static boolean gameOver = false;
-	private static Gson gson = new Gson(); // GSON 객체
+	private static Gson gson = new Gson();
 
 	// 타이머 관련
 	private static ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
@@ -42,6 +42,11 @@ public class MultiGameService {
 	 */
 	public synchronized List<SendJob> handleOpen(Session session) {
 		List<SendJob> out = new ArrayList<>();
+		
+		// 게임 시작 전이라면 끊긴 세션 정리
+		if (sessionList.size() < 4) {
+			sessionList.removeIf(s -> !s.isOpen());
+		}
 
 		if (sessionList.size() >= 4) {
 			out.add(createErrorJob(session, "ROOM_FULL", "방이 꽉 찼습니다."));
@@ -54,15 +59,17 @@ public class MultiGameService {
 
 		// 4명이 안 찼으면 대기 메시지 전송
 		if (sessionList.size() < 4) {
-			JsonObject waitJson = new JsonObject();
-			waitJson.addProperty("type", "GAME_OVER");
-			waitJson.addProperty("msg", "플레이어 대기 중... (" + sessionList.size() + "/4)");
-
 			JsonObject j = new JsonObject();
 			j.addProperty("type", "MULTI_WAIT");
 			j.addProperty("msg", "다른 플레이어를 기다리는 중입니다... (" + sessionList.size() + "/4)");
-			out.add(new SendJob(session, gson.toJson(j)));
-
+			
+			String jsonStr = gson.toJson(j);
+			
+			// 리스트에 있는 모든 session에게 개별 전송
+			for (Session s : sessionList) {
+				out.add(new SendJob(s, jsonStr));
+			}
+			
 			return out;
 		}
 
@@ -87,7 +94,7 @@ public class MultiGameService {
 
 				// 시작 메시지 JSON 생성
 				JsonObject startJson = new JsonObject();
-				startJson.addProperty("type", "GAME_START");
+				startJson.addProperty("type", "GAME_MULTI_START");
 				startJson.addProperty("color", color);
 				startJson.addProperty("slot", i); // 본인의 슬롯 번호(0~3)
 
@@ -115,13 +122,30 @@ public class MultiGameService {
 			return out;
 		}
 
-		// GSON으로 파싱
 		try {
 			JsonObject json = gson.fromJson(msg, JsonObject.class);
 
 			// 기권 처리
 			if (json.has("type") && "MULTI_GIVEUP".equals(json.get("type").getAsString())) {
-				endGame(out, "기권을 눌렀다네");
+				Player p = playersMap.get(session.getId());
+				if (p != null && p.isAlive()) {
+					p.disconnect(); // 사망 처리
+					
+					// 팀 전멸 체크
+					if (isTeamDead(p.getTeam())) {
+						endGame(out, (p.getTeam() == 0 ? "흑돌" : "백돌") + " 팀 전원 기권패!");
+					} else {
+						// 1:2 상황으로 진행
+						JsonObject notice = new JsonObject();
+						notice.addProperty("type", "MULTI_WAIT");
+						notice.addProperty("msg", "플레이어가 기권했습니다. 남은 팀원이 이어받습니다.");
+						addBroadcastJobs(out, gson.toJson(notice));
+						
+						// 턴 상태 갱신
+						out.addAll(broadcastTurn());
+						startTurnTimer();
+					}
+				}
 				return out;
 			}
 
@@ -141,9 +165,15 @@ public class MultiGameService {
 				return out;
 			}
 
-			// 턴 검사 (현재 턴 세션 === 보낸 세션)
-			if (!sessionList.get(turn).equals(session)) {
-				return out; // 내 자례 아님
+			// 턴 검사 (현재 턴의 실제 수행자가 맞는지 확인)
+			int actorIdx = getActorIndex(turn);
+			if (actorIdx == -1) { // 수행자 없음
+				return out;
+			}
+			
+			Session activeSession = sessionList.get(actorIdx);
+			if (!activeSession.equals(session)) {
+				return out; // 내 차례 아님
 			}
 
 			// 착수
@@ -167,7 +197,7 @@ public class MultiGameService {
 				}
 
 				JsonObject winJson = new JsonObject();
-				winJson.addProperty("type", "iswin");
+				winJson.addProperty("type", "MULTI_WIN");
 				winJson.addProperty("color", winColor);
 				out.add(new SendJob(null, gson.toJson(winJson)));
 				return out;
@@ -179,52 +209,75 @@ public class MultiGameService {
 			startTurnTimer();
 
 		} catch (Exception e) {
-			e.printStackTrace(); // 서버 콘솔에서 에러 확인
+			e.printStackTrace();
 		}
 		return out;
 	}
 
 	/**
-	 * 종료 처리
+	 * 퇴장 처리
 	 * @param session
 	 * @return
 	 */
 	public synchronized List<SendJob> handleClose(Session session) {
 		List<SendJob> out = new ArrayList<>();
-
-		// 나간 사람 제거
-		boolean removed = sessionList.remove(session);
-		playersMap.remove(session.getId());
-
-		System.out.println("퇴장: " + session.getId() + " (남은 인원: " + sessionList.size() + ")");
-
-		// 게임 중이었는데 누가 나가면 게임 종료
-		if (removed && !gameOver && sessionList.size() > 0 && sessionList.size() < 4) {
-			// 4명이 다 찬 상태에서 줄어든 경우에만 에러 처리 (게임 시작 전 퇴장은 무관)
-			// 하지만 간단하게 구현하기 위해, 
-			// "게임이 이미 시작된 상태(board에 돌이 있거나 등)"를 체크하면 좋음.
-			// 여기서는 간단히 리셋.
-			endGame(out, "플레이어 퇴장으로 게임이 종료되었습니다.");
-
-			// 상태 초기화
-			board = new int[15][15];
-			turn = 0;
-			if (turnTask != null)
-				turnTask.cancel(false);
-			// sessionList는 유지하되, 게임을 다시 시작하려면 4명을 다시 채워야 함
+		
+		if (gameOver) {
+			sessionList.remove(session);
+			playersMap.remove(session.getId());
+			
+			// 마지막 사람까지 다 나가면 방 초기화
+			if (sessionList.isEmpty()) {
+				boardInitializer();
+				System.out.println("게임 종료 후 초기화 완료");
+			}
+			return out;
 		}
-
-		// 초기화
+		
+		// 게임 중일 때는 '사망' 처리함 (인덱스 유지를 위해)
+		if (sessionList.size() == 4) {
+			Player p = playersMap.get(session.getId());
+			if (p != null && p.isAlive()) {
+				p.disconnect();
+				System.out.println("게임 중 퇴장: " + session.getId());
+				
+				if (isTeamDead(p.getTeam())) {
+					endGame(out, "상대 팀 전원 퇴장으로 승리!");
+					// 게임 종료 후 정리
+					sessionList.clear();
+					playersMap.clear();
+				} else {
+					// 1명만 나감 -> 게임 계속
+					JsonObject notice = new JsonObject();
+					notice.addProperty("type", "MULTI_WAIT");
+					notice.addProperty("msg", "플레이어가 나갔습니다. 남은 팀원이 이어받습니다.");
+					addBroadcastJobs(out, gson.toJson(notice));
+					
+					out.addAll(broadcastTurn());
+					startTurnTimer();
+				}
+			}
+		} else {
+			// 대기 중일 떄는 그냥 삭제
+			sessionList.remove(session);
+			playersMap.remove(session.getId());
+			System.out.println("대기 중 퇴장 남은 인원: " + sessionList.size());
+			
+			JsonObject j = new JsonObject();
+			j.addProperty("type", "MULTI_WAIT");
+			j.addProperty("msg", "플레이어 퇴장. 현재 (" + sessionList.size() + "/4)");
+			addBroadcastJobs(out, gson.toJson(j));
+		}
+		
+		// 모두 나갔으면 초기화
 		if (sessionList.isEmpty()) {
-			board = new int[15][15];
-			turn = 0;
+			boardInitializer();
 		}
-
 		return out;
 	}
 
 	// ---------------------------------------------------------------
-	// 보조 메서드들
+	// 보조 메서드
 	// ---------------------------------------------------------------	
 
 	private void nextTurn() {
@@ -234,22 +287,91 @@ public class MultiGameService {
 	private void endGame(List<SendJob> out, String msg) {
 		gameOver = true;
 		JsonObject json = new JsonObject();
-		json.addProperty("type", "gameover");
+		json.addProperty("type", "GAME_OVER");
 		json.addProperty("msg", msg);
 		out.add(new SendJob(null, gson.toJson(json)));
 	}
+	
+	// 방 초기화
+	private void boardInitializer() {
+		board = new int[15][15];
+		turn = 0;
+		gameOver = false;
+		if (turnTask != null) {
+			turnTask.cancel(false);
+		}
+	}
 
 	// 턴 알림 생성
+	// 실제 둘 사람(Actor)을 계산해서 보냄
 	private List<SendJob> broadcastTurn() {
 		int color = (turn % 2 == 0) ? 1 : 2;
+		
+		// 현재 턴의 주인이 죽었으면 대리인(같은 팀) 찾음
+		int actorIdx = getActorIndex(turn);
+		
 		JsonObject turnJson = new JsonObject();
 		turnJson.addProperty("type", "MULTI_TURN");
 		turnJson.addProperty("color", color);
 		turnJson.addProperty("time", 15);
-		turnJson.addProperty("turnIdx", turn); // 현재 턴인 사람의 slot 번호 (0~3)
+		turnJson.addProperty("turnIdx", actorIdx); 
 
-		// target이 null이면 전체 전송 (MultiWebSocket에서 처리)
-		return List.of(new SendJob(null, gson.toJson(turnJson)));
+		List<SendJob> jobs = new ArrayList<>();
+		addBroadcastJobs(jobs, gson.toJson(turnJson));
+		return jobs;
+	}
+	
+	// 특정 인덱스의 플레이어 가져오기
+	private Player getPlayerAt(int index) {
+		if (index < 0 || index >= sessionList.size()) {
+			return null;
+		}
+		
+		try {
+			return playersMap.get(sessionList.get(index).getId());
+		} catch (Exception e) {
+			return null;
+		}
+	}
+	
+	// 현재 턴을 수행해야 할 사람 찾기
+	private int getActorIndex(int turnIndex) {
+		Player p = getPlayerAt(turnIndex);
+		
+		// 본인이 살아있으면 본인
+		if (p != null && p.isAlive()) {
+			return turnIndex;
+		}
+		
+		// 본인이 죽었으면 같은 팀원 (0<->2, 1<->3)
+		int teammateIndex = (turnIndex + 2) % 4;
+		Player t = getPlayerAt(teammateIndex);
+		if (t != null && t.isAlive()) {
+			return teammateIndex;
+		}
+		
+		return -1; // 둘 다 죽음 (게임 종료)
+	}
+	
+	private boolean isTeamDead(int team) {
+		int idx1 = (team == 0) ? 0 : 1;
+		int idx2 = idx1 + 2;
+		Player p1 = getPlayerAt(idx1);
+		Player p2 = getPlayerAt(idx2);
+		
+		// 접속 전이거나(null) 죽었으면(!alive) 죽은 것으로 간주
+		boolean p1Dead = (p1 == null || !p1.isAlive());
+		boolean p2Dead = (p2 == null || !p2.isAlive());
+		return p1Dead && p2Dead;
+	}
+	
+	// 안전한 전체 전송 헬퍼
+	private void addBroadcastJobs(List<SendJob> out, String json) {
+		for (Session s : sessionList) {
+			if (s.isOpen()) {
+				out.add(new SendJob(s, json));
+			}
+		}
 	}
 
 	// 에러 메시지 생성 헬퍼
@@ -263,23 +385,40 @@ public class MultiGameService {
 
 	// 타이머 시작
 	private void startTurnTimer() {
+		// 기존 타이머가 돌고 있다면 취소
 		if (turnTask != null && !turnTask.isDone()) {
 			turnTask.cancel(false);
 		}
+		
+		// 현재 턴 번호 기억
+		final int currentTurn = turn;
+		
 		turnTask = scheduler.schedule(() -> {
-			// 시간 초과 로직\
 			synchronized (MultiGameService.this) {
-				if (gameOver) {
+				if (gameOver || turn != currentTurn) {
 					return;
 				}
+				
 				System.out.println("시간 초과! 차례가 넘어갑니다.");
 				nextTurn();
-				try {
-					// ※ 서비스에서 직접 소켓 전송을 하려면 
-					// WebSocket endpoint와 연결된 콜백 구조가 필요하나,
-					// 여기서는 로직상 턴만 넘기고, 다음 사람이 돌을 둘 때 갱신되게 하거나
-					// 별도 스레드에서 전송 로직을 구현해야 함. (복잡도 방지를 위해 생략)
-				} catch (Exception e) {}
+				
+				// 변경된 턴 정보를 모든 클라이언트에게 직접 전송
+				List<SendJob> jobs = broadcastTurn();
+				if (!jobs.isEmpty()) {
+					String msg = jobs.get(0).text();
+					
+					for (Session s : sessionList) {
+						if (s.isOpen()) {
+							try {
+								s.getBasicRemote().sendText(msg);
+							} catch (Exception e) {
+								e.printStackTrace();
+							}
+ 						}
+					}
+				}
+				// 타이머 재시작
+				startTurnTimer();
 			}
 		}, 15, TimeUnit.SECONDS);
 	}
@@ -319,6 +458,6 @@ public class MultiGameService {
 				}
 			}
 		}
-		return 0; // 승리자 없음
+		return 0;
 	}
 }

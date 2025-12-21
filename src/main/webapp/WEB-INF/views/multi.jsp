@@ -37,10 +37,29 @@
 
     drawBoard();
 
+    const params = new URLSearchParams(window.location.search);
+	const playType = params.get("playType");  // "single" | "multi"
+	const roomId = params.get("roomId");      // "게임_아이디"
+	
+	if(!roomId) {
+		alert("roomId가 없습니다. URL에 roomId를 포함해 주세요.");
+		throw new Error("Missing roomId");
+	}
+	
+	if (playType !== "multi") {
+		console.warn("playType이 multi가 아닙니다.:", playType);
+	}
+	
+	const wsProtocol = (location.protocl === "https:") ? "wss" : "ws";
 	const contextPath = "<%= request.getContextPath() %>";
-	const wsProto = (location.protocol === "https:") ? "wss" : "ws";
-	const ws = new WebSocket(`${wsProto}://${location.host}${contextPath}/multi`);
-
+	const wsUrl = 
+		wsProtocol + "://" +
+		location.host +
+		contextPath +
+		"/multi?roomId=" +
+		encodeURIComponent(roomId);
+	const ws = new WebSocket(wsUrl);
+	
 	ws.onopen = () => log("서버에 연결되었습니다. 매칭을 기다립니다...");
 	ws.onmessage = (e) => handle(JSON.parse(e.data));
     ws.onerror = (e) => console.error("WebSocket error", e);
@@ -52,12 +71,13 @@
 	function handle(data) {
 		// 0. 플레이어 입장 대기
 		if (data.type === "MULTI_WAIT") {
-			statusDib.innerText = data.msg;
+			statusDiv.innerText = data.msg;
 			log(data.msg);
+			return;
 		}
 		
 	    // 1. 게임 시작
-	    if (data.type === "MULTI_START") {
+	    if (data.type === "GAME_MULTI_START") {
 	    	drawBoard();
 	    	
 	    	myIdx = data.slot;

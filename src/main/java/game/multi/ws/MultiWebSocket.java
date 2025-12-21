@@ -12,7 +12,7 @@ import javax.websocket.server.ServerEndpoint;
 import game.multi.service.MultiGameService;
 import game.multi.service.MultiGameService.SendJob;
 
-@ServerEndpoint("/multi")
+@ServerEndpoint("/game/multi")
 public class MultiWebSocket {
 
 	private static final MultiGameService service = new MultiGameService();
@@ -60,27 +60,31 @@ public class MultiWebSocket {
 
 		for (SendJob job : jobs) {
 			try {
+				// 1. 전체 전송 (Broadcast)
 				if (job.target() == null) {
 					// 타겟이 없으면(null) => 브로드캐스트 (전체 전송)
 					for (Session s : fallback.getOpenSessions()) {
 						if (s.isOpen()) {
-							synchronized (s) {
-								s.getBasicRemote().sendText(job.text());
-							}
+							try {
+								// 동기화 처리로 충돌 방지
+								synchronized (s) {
+									s.getBasicRemote().sendText(job.text());
+								}
+							} catch (Exception e) { }
 						}
 					}
-				} else {
-					// 타겟이 있으면 => 유니캐스트 (개인 전송)
+				} 
+				// 2. 개별 전송 (Unicast)
+				else {
 					if (job.target().isOpen()) {
-						synchronized (job.target()) {
-							job.target().getBasicRemote().sendText(job.text());
-						}
+						try {
+							synchronized (job.target()) {
+								job.target().getBasicRemote().sendText(job.text());
+							}
+						} catch (Exception e) { }
 					}
 				}
-			} catch (Exception e) {
-				System.out.println("메시지 전송 실패: " + e.getMessage());
-				e.printStackTrace();
-			}
+			} catch (Exception ignore) { }
 		}
 	}
 }
