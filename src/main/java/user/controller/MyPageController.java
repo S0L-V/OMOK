@@ -110,9 +110,9 @@ public class MyPageController extends HttpServlet {
 						.gameId(rs.getString("game_id"))
 						.roomId(rs.getString("room_id"))
 						.userId(rs.getString("user_id"))
-						.stoneColor(rs.getString("stone_color"))
-						.gameResult(rs.getString("game_result"))
-						.playType(rs.getString("play_type"))
+						.stoneColor(String.valueOf(rs.getInt("stone_color")))
+						.gameResult(String.valueOf(rs.getInt("game_result")))
+						.playType(String.valueOf(rs.getInt("play_type")))
 						.finishedAt(rs.getTimestamp("finished_at"))
 						.build();
 					list.add(dto);
