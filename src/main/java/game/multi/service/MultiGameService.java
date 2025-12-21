@@ -27,7 +27,7 @@ public class MultiGameService {
 	public static record SendJob(Session target, String text) {}
 	
 	// 입장 처리
-    public List<SendJob> handleOpen(Session session, String roomId) {
+    public List<SendJob> handleOpen(Session session, String roomId, String userId) {
         // 1. 방이 없으면 생성
         GameRoom room = rooms.computeIfAbsent(roomId, id -> new GameRoom(id));
         
@@ -35,7 +35,7 @@ public class MultiGameService {
         sessionRoomMap.put(session.getId(), roomId);
         
         // 3. 해당 방의 입장 로직 호출
-        return room.handleOpen(session);
+        return room.handleOpen(session, userId);
     }
     
     // 메시지 처리
