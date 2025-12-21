@@ -207,23 +207,33 @@
     location.href = "/lobby";
   });
 
-  /* IME 조합 중 Enter 처리로 뒷글자 반복 방지 */
+  /* IME 조합 상태 추적 (한글 뒷글자 중복 방지) */
   let isComposing = false;
-  chatInput?.addEventListener("compositionstart", () => (isComposing = true));
-  chatInput?.addEventListener("compositionend", () => (isComposing = false));
+  chatInput?.addEventListener("compositionstart", () => {
+    isComposing = true;
+  });
+  chatInput?.addEventListener("compositionend", () => {
+    isComposing = false;
+  });
 
+  /* 전송 버튼 클릭 */
   btnSend?.addEventListener("click", () => {
     if (isComposing) return;
+
     const text = chatInput?.value?.trim();
     if (!text) return;
+
     send("ROOM_CHAT", { text });
     chatInput.value = "";
     chatInput.focus();
   });
 
+  /* Enter 전송 */
   chatInput?.addEventListener("keydown", (e) => {
     if (e.key !== "Enter") return;
-    if (e.isComposing || isComposing) return; // 조합 중 Enter는 무시
+    if (isComposing || e.isComposing) return;
+
+    e.preventDefault();
     btnSend?.click();
   });
 
