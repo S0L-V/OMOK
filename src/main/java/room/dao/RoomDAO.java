@@ -14,4 +14,5 @@ public interface RoomDAO {
 		String roomPwd,
 		String isPublic,
 		String playType) throws Exception;
+
 }

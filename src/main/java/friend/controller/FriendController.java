@@ -212,7 +212,6 @@ public class FriendController extends HttpServlet {
 	 */
 	private void sendSuccess(HttpServletResponse res, Object data) throws IOException {
 		res.setStatus(200);
-		res.setContentType("application/json; charset=UTF-8");
 		ApiResponse response = new ApiResponse(true, data, null);
 		res.getWriter().write(gson.toJson(response));
 	}
@@ -222,7 +221,6 @@ public class FriendController extends HttpServlet {
 	 */
 	private void sendError(HttpServletResponse res, int statusCode, String message) throws IOException {
 		res.setStatus(statusCode);
-		res.setContentType("application/json; charset=UTF-8");
 		ApiResponse response = new ApiResponse(false, null, message);
 		res.getWriter().write(gson.toJson(response));
 	}

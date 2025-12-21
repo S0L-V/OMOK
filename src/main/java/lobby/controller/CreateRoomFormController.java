@@ -1,4 +1,4 @@
-package room.controller;
+package lobby.controller;
 
 import java.io.IOException;
 
