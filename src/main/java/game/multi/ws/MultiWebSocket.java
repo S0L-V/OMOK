@@ -18,14 +18,36 @@ public class MultiWebSocket {
 	private static final MultiGameService service = new MultiGameService();
 
 	@OnOpen
-	public void onOpen(Session session) {
-		try {
-			List<SendJob> jobs = service.handleOpen(session);
-			dispatch(session, jobs);
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-	}
+    public void onOpen(Session session) {
+        try {
+            // URL 쿼리 스트링에서 roomId 파싱 (예: ws://localhost/game/multi?room=101)
+            String query = session.getRequestURI().getQuery();
+            String roomId = getParameterValue(query, "roomId");
+
+            if (roomId == null || roomId.trim().isEmpty()) {
+                // 방 ID가 없으면 에러 처리 혹은 기본방("default")
+                roomId = "default"; 
+            }
+
+            // Service에 roomId도 함께 전달
+            List<SendJob> jobs = service.handleOpen(session, roomId);
+            dispatch(session, jobs);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+	
+	// 쿼리 스트링 파싱 헬퍼 메서드
+    private String getParameterValue(String query, String name) {
+        if (query == null) return null;
+        for (String param : query.split("&")) {
+            String[] pair = param.split("=");
+            if (pair.length > 1 && pair[0].equals(name)) {
+                return pair[1];
+            }
+        }
+        return null;
+    }
 
 	@OnMessage
 	public void onMessage(String msg, Session session) {
@@ -55,8 +77,7 @@ public class MultiWebSocket {
 	// [중요] Service가 시킨 배달 심부름을 수행하는 곳
 	private void dispatch(Session fallback, List<SendJob> jobs) {
 		// 전체에게 보내야 할 경우를 대비해 현재 열려있는 모든 세션을 가져옴
-		// (주의: service가 관리하는 sessionList와 다를 수 있으나, 보통 session.getOpenSessions()를 씀)
-		// 하지만 여기서는 Service가 target=null을 주면 "모두에게" 보내는 약속을 함.
+		// 하지만 여기서는 Service가 target=null을 주면 "모두에게" 보냄
 
 		for (SendJob job : jobs) {
 			try {
