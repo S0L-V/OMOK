@@ -7,6 +7,7 @@ import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 
 import com.google.gson.Gson;
 
@@ -27,6 +28,26 @@ public class JwtSignupController extends HttpServlet {
 	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws IOException {
 		try {
 			SignupRequestDTO dto = gson.fromJson(readBody(request), SignupRequestDTO.class);
+
+			HttpSession session = request.getSession(false);
+
+			Boolean emailVerified = (session == null)
+				? null
+				: (Boolean)session.getAttribute("emailVerified");
+
+			String verifiedEmail = (session == null)
+				? null
+				: (String)session.getAttribute("emailVerifyTarget");
+
+			if (emailVerified == null || !emailVerified) {
+				JsonUtil.writeError(response, 400, "EMAIL_NOT_VERIFIED", "EMAIL_NOT_VERIFIED");
+				return;
+			}
+
+			if (verifiedEmail == null || !verifiedEmail.equals(dto.getEmail())) {
+				JsonUtil.writeError(response, 400, "EMAIL_MISMATCH", "EMAIL_MISMATCH");
+				return;
+			}
 
 			if (dto == null
 				|| isBlank(dto.getEmail())

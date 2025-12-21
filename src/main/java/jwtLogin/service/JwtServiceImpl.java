@@ -33,7 +33,7 @@ public class JwtServiceImpl implements JwtService {
 			throw new AuthException("INVALID_CREDENTIALS");
 
 		// 일반 로그인인데 카카오 계정이면 막기(정책 선택)
-		if (!"2".equals(user.getLoginType())) {
+		if (!"0".equals(user.getLoginType())) {
 			throw new AuthException("NOT_NORMAL_ACCOUNT");
 		}
 
@@ -46,7 +46,7 @@ public class JwtServiceImpl implements JwtService {
 
 	@Override
 	public ResponseDTO issueToken(String userId, String email, String loginTypeDb, String nickname) {
-		// DB login_type('1','2') -> 응답 표준("KAKAO","NORMAL")
+
 		String loginTypeStr = "1".equals(loginTypeDb) ? "KAKAO" : "NORMAL";
 
 		String accessToken = JwtUtil.createAccessToken(userId, loginTypeStr, nickname);

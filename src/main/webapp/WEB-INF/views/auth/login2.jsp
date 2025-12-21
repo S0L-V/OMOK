@@ -46,6 +46,25 @@
       border: 1px solid #ddd;
       min-height: 60px;
     }
+        .kakao-wrap {
+      margin-top: 14px;
+      display: flex;
+      justify-content: center;
+    }
+    .kakao-btn {
+      border: none;
+      background: transparent;
+      padding: 0;
+      cursor: pointer;
+    }
+    .kakao-btn img {
+      display: block;
+      width: 180px;
+      height: auto;
+    }
+    .kakao-btn:active {
+      transform: translateY(1px);
+    }
   </style>
 </head>
 <body>
@@ -73,6 +92,14 @@
               onclick="location.href='<%=request.getContextPath()%>/signup2'">
         회원가입
       </button>
+    </div>
+    <div class="kakao-wrap">
+      <form action="<%=request.getContextPath()%>/login/kakao" method="get">
+        <button type="submit" class="kakao-btn" aria-label="카카오 로그인">
+          <img src="<%=request.getContextPath()%>/static/kakao_login_medium_narrow.png"
+               alt="카카오 로그인" />
+        </button>
+      </form>
     </div>
 
     <pre id="result"></pre>

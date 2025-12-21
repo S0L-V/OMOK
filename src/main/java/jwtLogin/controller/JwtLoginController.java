@@ -38,7 +38,22 @@ public class JwtLoginController extends HttpServlet {
 
 			HttpSession session = request.getSession(true);
 			session.setAttribute("accessToken", out.getAccessToken());
+			// ✅ [추가] userId / nickname은 out.getUser() 안에 있음
+			// (WebSocket, JSP에서 session.getAttribute("loginUserId") 같은 걸 쓰려면 꼭 필요)
+			ResponseDTO.User user = out.getUser(); // ★ 추가
 
+			// user가 null일 가능성 방어(비정상 응답 대비)
+			if (user != null) {
+				session.setAttribute("loginUserId", user.getId()); // ★ 추가
+				session.setAttribute("loginNickname", user.getNickname()); // ★ 추가
+				session.setAttribute("loginType", user.getLoginType()); // (원하면 같이 저장)
+			}
+
+			// ✅ [추가] 로그인 성공 직후 로그
+			System.out.println(
+				"[LOGIN_SUCCESS] session=" + session.getId()
+					+ " userId=" + (user == null ? "null" : user.getId())
+					+ " nick=" + (user == null ? "null" : user.getNickname()));
 			JsonUtil.writeJson(response, 200, out);
 
 		} catch (AuthException e) {
