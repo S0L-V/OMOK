@@ -55,6 +55,11 @@ public class GameResultController extends HttpServlet {
 		String action = paths[1]; // history / stats
 		String userId = paths[2]; // userId
 
+		if (userId == null || userId.trim().isEmpty()) {
+			sendError(res, 400, "userId가 비어있습니다.");
+			return;
+		}
+
 		switch (action) {
 			case "history":
 				handleGetGameHistory(res, userId);

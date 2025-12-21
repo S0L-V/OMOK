@@ -61,15 +61,15 @@ public class UserInfoDAOImpl implements UserInfoDAO {
 
 			updated = pstmt.executeUpdate();
 
-		} catch (Exception e) {
-			System.err.println("[DAO] updateUserStats 실패");
-			throw new SQLException("사용자 통계 업데이트 SQL 실패", e);
+		} catch (SQLException e) {
+			System.err.println("[DAO] updateUserStats SQL 실패");
+			throw e;
 		}
 
 		if (updated == 0) {
 			throw new SQLException("사용자 통계 업데이트 실패: 대상 사용자를 찾을 수 없음 - " + userInfo.getUserId());
 		}
-		
+
 		System.out.println("[DAO] : " + userInfo.getUserId() + " 통계 업데이트 완료");
 	}
 

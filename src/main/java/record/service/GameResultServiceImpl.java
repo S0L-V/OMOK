@@ -177,7 +177,6 @@ public class GameResultServiceImpl implements GameResultService {
 		try (Connection conn = DB.getConnection()) {
 			return userInfoDAO.getUserInfo(userId, conn);
 		} catch (Exception e) {
-			e.printStackTrace();
 			return null;
 		}
 	}
