@@ -1,0 +1,15 @@
+name: Create Issue Branch
+
+on:
+  issues:
+    # 이슈가 열리거나, 라벨이 붙거나, 담당자가 지정될 때 모두 실행
+    types: [opened, labeled, assigned]
+
+jobs:
+  create_issue_branch_job:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create Issue Branch
+        uses: robvanderleek/create-issue-branch@main
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
