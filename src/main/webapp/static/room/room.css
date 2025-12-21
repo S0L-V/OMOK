@@ -216,3 +216,12 @@ section.card {
     height: 420px;
   }
 }
+
+.chat-msg {
+  white-space: pre-wrap; /* 줄바꿈 유지 */
+  color: #000;           /* 안 보이는 경우 대비 */
+}
+
+.chat-row {
+  margin-bottom: 6px;
+}

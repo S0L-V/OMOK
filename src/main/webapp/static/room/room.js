@@ -4,11 +4,11 @@
   const roomName = pageEl?.dataset?.roomName || "";
 
   const wsStatus = document.querySelector("#ws-status");
-  const chatInput = document.querySelector("#chat-input");
+  const chatInput = document.querySelector("#chat-input"); // input
   const chatLog = document.querySelector("#chat-log");
   const userList = document.querySelector("#user-list");
 
-  const btnLobby = document.querySelector("#btn-lobby");
+  const btnLobby = document.querySelector("#btn-lobby"); // 없으면 null이어도 OK
   const btnLeave = document.querySelector("#btn-leave");
   const btnSend = document.querySelector("#chat-send");
 
@@ -59,20 +59,23 @@
 
     const arr = Array.from(users.entries()).map(([userId, nickname]) => ({
       userId,
-      nickname: nickname,
+      nickname,
     }));
-    arr.sort((a, b) => a.nickname.localeCompare(b.nickname, "ko"));
+    arr.sort((a, b) => (a.nickname || "").localeCompare(b.nickname || "", "ko"));
 
     userList.innerHTML = arr
-      .map((u) => `<li data-user-id="${encodeURIComponent(u.userId)}">${escapeHtml(u.nickname)}</li>`)
+      .map(
+        (u) =>
+          `<li data-user-id="${encodeURIComponent(u.userId)}">${escapeHtml(u.nickname || "")}</li>`
+      )
       .join("");
   }
 
   function setUsers(list) {
     users.clear();
     (Array.isArray(list) ? list : []).forEach((u) => {
-      const userId = u.userId;
-      const nickname = u.nickname;
+      const userId = u?.userId;
+      const nickname = u?.nickname;
       if (userId) users.set(String(userId), nickname ? String(nickname) : "");
     });
     renderUsers();
@@ -111,9 +114,8 @@
   }
 
   function handleError(msg) {
-    const code = msg?.payload?.code ?? msg?.code;
     const message = msg?.payload?.message ?? msg?.message ?? "오류가 발생했습니다.";
-    console.warn("[WS] ERROR:", code, message);
+    console.warn("[WS] ERROR:", msg);
     alert(message);
     location.href = "/lobby";
   }
@@ -141,7 +143,6 @@
 
       switch (msg.type) {
         case "CONNECTED": {
-          // 스냅샷을 반드시 받을 거면 여기서 addUser 안 해도 됨(중복 방지)
           break;
         }
 
@@ -168,13 +169,12 @@
           }
           break;
         }
-		/*
+
         case "ROOM_CHAT": {
           const p = msg.payload || {};
           appendChat(p.from, p.text);
           break;
         }
-        */
 
         case "ROOM_EXIT": {
           appendSystemLog("방에서 나갔습니다.");
@@ -217,23 +217,46 @@
 
   btnLeave?.addEventListener("click", () => {
     send("ROOM_EXIT", {});
-    try { ws?.close(); } catch (_) {}
+    try {
+      ws?.close();
+    } catch (_) {}
     location.href = "/lobby";
   });
 
-  btnSend?.addEventListener("click", () => {
-    const text = chatInput?.value?.trim();
-    if (!text) return;
-    send("ROOM_CHAT", { text });
-    chatInput.value = "";
+  /* IME 조합 상태 추적 (한글 뒷글자 중복 방지) */
+  let isComposing = false;
+  chatInput?.addEventListener("compositionstart", () => {
+    isComposing = true;
+  });
+  chatInput?.addEventListener("compositionend", () => {
+    isComposing = false;
   });
 
+  /* 전송 버튼 클릭 */
+  btnSend?.addEventListener("click", () => {
+    if (isComposing) return;
+
+    const text = chatInput?.value?.trim();
+    if (!text) return;
+
+    send("ROOM_CHAT", { text });
+    chatInput.value = "";
+    chatInput.focus();
+  });
+
+  /* Enter 전송 */
   chatInput?.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") btnSend?.click();
+    if (e.key !== "Enter") return;
+    if (isComposing || e.isComposing) return;
+
+    e.preventDefault();
+    btnSend?.click();
   });
 
   window.addEventListener("beforeunload", () => {
-    try { ws?.close(); } catch (_) {}
+    try {
+      ws?.close();
+    } catch (_) {}
   });
 
   renderUsers();
