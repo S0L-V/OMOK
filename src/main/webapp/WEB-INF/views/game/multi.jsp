@@ -137,6 +137,8 @@
             }
             log(msg);
             statusDiv.innerText = msg;
+            
+            goToRoomView();
 	    }
 	    
         // 5. 에러/종료 메시지
@@ -145,6 +147,10 @@
             clearInterval(timer);
 	    	log(data.msg);
             alert(data.msg);
+            
+            if (data.type === "GAME_OVER") {
+            	goToRoomView();
+            }
 	    }
 	}
 	
@@ -161,7 +167,6 @@
         }
 
         const rect = canvas.getBoundingClientRect();
-        // 서버와 좌표계 통일 중요함
         const x = Math.floor((e.clientX - rect.left) / size);
         const y = Math.floor((e.clientY - rect.top) / size);
         
@@ -170,6 +175,13 @@
             ws.send(JSON.stringify({x: x, y: y})); 
         }
     });
+	
+	// 방 이동 함수
+	function goToRoomView() {
+	    setTimeout(() => {
+	        location.href = "<%= request.getContextPath() %>/room?roomId=" + encodeURIComponent(roomId) + "&playType=" + encodeURIComponent(playType);
+	    }, 500);
+	}
 	
 	function startTimer(sec, turnColor) {
 	    clearInterval(timer);
