@@ -25,6 +25,6 @@ public class SingleWebSocket {
 
 	@OnClose
 	public void onClose(Session session) {
-		service.onClose();
+		service.onClose(session);
 	}
 }

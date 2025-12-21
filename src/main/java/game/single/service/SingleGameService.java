@@ -7,5 +7,5 @@ public interface SingleGameService {
 
 	void onMessage(String msg, Session session) throws Exception;
 
-	void onClose();
+	void onClose(Session session);
 }

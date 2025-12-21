@@ -112,7 +112,7 @@ public class SingleGameServiceImpl implements SingleGameService {
 	}
 
 	@Override
-	public void onClose() {
+	public void onClose(Session session) {
 		players.clear();
 		board = new int[15][15];
 		turn = 0;
@@ -217,7 +217,7 @@ public class SingleGameServiceImpl implements SingleGameService {
 				}
 			}
 		}
-		return 0; // 승리자 없음 
+		return 0; 
 	}
 
 }
