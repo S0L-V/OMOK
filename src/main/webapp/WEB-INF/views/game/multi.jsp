@@ -56,8 +56,9 @@
 		wsProtocol + "://" +
 		location.host +
 		contextPath +
-		"/multi?roomId=" +
+		"/game/multi?roomId=" +
 		encodeURIComponent(roomId);
+	console.log("접속 시도 URL:", wsUrl);
 	const ws = new WebSocket(wsUrl);
 	
 	ws.onopen = () => log("서버에 연결되었습니다. 매칭을 기다립니다...");
