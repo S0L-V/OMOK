@@ -13,12 +13,23 @@
 <body>
   <main class="wrap" id="room-page"
         data-room-id="<c:out value='${roomId}'/>"
-        data-room-name="<c:out value='${roomName}'/>">
+        data-room-name="<c:out value='${roomName}'/>"
+        data-play-type="<c:out value='${playType}'/>"
+        data-host-user-id="<c:out value='${hostUserId}'/>"
+        >
 
     <header class="header">
       <div class="title">
         <h2>🎮 방: <c:out value="${roomName}" /></h2>
         <p class="muted">roomId: <c:out value="${roomId}" /></p>
+		<p class="muted">
+		  playType:
+		  <c:choose>
+		    <c:when test="${playType eq '0'}">개인전</c:when>
+		    <c:when test="${playType eq '1'}">팀전</c:when>
+		    <c:otherwise>알 수 없음</c:otherwise>
+		  </c:choose>
+		</p>        
       </div>
 
       <div class="actions">
@@ -36,9 +47,18 @@
     </c:if>
 
     <section class="grid">
-      <section class="card">
-        <h3>👥 참가자</h3>
-        <ul id="user-list" class="user-list"></ul>
+      <section class="card side-nav">
+       	 <div>
+       	  <h3>👥 참가자</h3>
+          <ul id="user-list" class="user-list"></ul>
+       	 </div>
+         <form id="start-form"
+        method="post"
+        action="${pageContext.request.contextPath}/game/start?roomId=${roomId}&playType=${playType}">
+		    <button type="submit" id="btn-start" class="btn-start">
+		      🎯 시작하기
+		    </button>
+		  </form>
       </section>
       <section class="card">
         <h3>💬 채팅</h3>
@@ -54,7 +74,6 @@
       </section>
     </section>
   </main>
-
   <script src="/static/room/room.js"></script>
 </body>
 </html>
