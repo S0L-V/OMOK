@@ -2,6 +2,8 @@ package game.multi.ws;
 
 import java.util.List;
 
+import javax.servlet.http.HttpSession;
+import javax.websocket.EndpointConfig;
 import javax.websocket.OnClose;
 import javax.websocket.OnError;
 import javax.websocket.OnMessage;
@@ -9,18 +11,26 @@ import javax.websocket.OnOpen;
 import javax.websocket.Session;
 import javax.websocket.server.ServerEndpoint;
 
+import config.WebSocketConfig;
 import game.multi.service.MultiGameService;
 import game.multi.service.MultiGameService.SendJob;
 
-@ServerEndpoint("/game/multi")
+@ServerEndpoint(value = "/game/multi", configurator = WebSocketConfig.class)
 public class MultiWebSocket {
 
 	private static final MultiGameService service = new MultiGameService();
 
 	@OnOpen
-    public void onOpen(Session session) {
+    public void onOpen(Session session, EndpointConfig config) {
         try {
-            // URL 쿼리 스트링에서 roomId 파싱 (예: ws://localhost/game/multi?room=101)
+        	// HttpSession에서 userId 가져오기
+        	HttpSession httpSession = (HttpSession) config.getUserProperties().get(HttpSession.class.getName());
+        	String userId = null;
+        	if (httpSession != null) {
+        		userId = (String) httpSession.getAttribute("loginUserId");
+        	}
+        	
+            // URL 쿼리 스트링에서 roomId 파싱
             String query = session.getRequestURI().getQuery();
             String roomId = getParameterValue(query, "roomId");
 
@@ -29,8 +39,8 @@ public class MultiWebSocket {
                 roomId = "default"; 
             }
 
-            // Service에 roomId도 함께 전달
-            List<SendJob> jobs = service.handleOpen(session, roomId);
+            // Service에 roomId와 userId 함께 전달
+            List<SendJob> jobs = service.handleOpen(session, roomId, userId);
             dispatch(session, jobs);
         } catch (Exception e) {
             e.printStackTrace();
@@ -74,10 +84,9 @@ public class MultiWebSocket {
 		System.out.println("소켓 에러 발생: " + t.getMessage());
 	}
 
-	// [중요] Service가 시킨 배달 심부름을 수행하는 곳
 	private void dispatch(Session fallback, List<SendJob> jobs) {
 		// 전체에게 보내야 할 경우를 대비해 현재 열려있는 모든 세션을 가져옴
-		// 하지만 여기서는 Service가 target=null을 주면 "모두에게" 보냄
+		// Service가 target=null을 주면 "모두에게" 보냄
 
 		for (SendJob job : jobs) {
 			try {
