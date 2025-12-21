@@ -36,6 +36,7 @@
             로그아웃
           </button>
         </form>
+        <button class="btn" onclick="window.location.href='/user/my'">마이페이지</button> 
       </c:otherwise>
     </c:choose>
   </div>

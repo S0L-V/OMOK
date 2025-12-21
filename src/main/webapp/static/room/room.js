@@ -185,6 +185,22 @@
           handleError(msg);
           break;
         }
+        
+        case "GAME_START": {
+		  const { roomId, playType } = msg.payload || {};
+		  
+		  console.log("[WS GAME START]", roomId, playType);
+		  if (!roomId || !playType) return;
+		
+		  if (String(playType) === "0") {
+		    location.href = `/game/single?roomId=${encodeURIComponent(roomId)}`;
+		  } else if (String(playType) === "1") {
+		    location.href = `/game/multi?roomId=${encodeURIComponent(roomId)}`;
+		  } else {	
+		    console.warn("Unknown playType:", playType);
+		  }
+		  break;
+		}
 
         default:
           console.log("[WS] message:", msg);

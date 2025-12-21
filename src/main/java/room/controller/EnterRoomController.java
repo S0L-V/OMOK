@@ -29,7 +29,8 @@ public class EnterRoomController extends HttpServlet {
 
 		try {
 			String roomId = request.getParameter("roomId");
-			if (roomId == null || roomId.isBlank()) {
+			String playType = request.getParameter("playType");
+			if (roomId == null || roomId.isBlank() || playType == null || playType.isBlank()) {
 				response.sendRedirect(ctx + "/lobby?error=missing_room_id");
 				return;
 			}
@@ -45,7 +46,9 @@ public class EnterRoomController extends HttpServlet {
 
 			System.out.println("[ENTER] ctx=" + request.getContextPath() + " roomId=" + roomId + " userId=" + userId);
 			LobbyWebSocket.broadcastRoomList();
-			response.sendRedirect(ctx + "/room?roomId=" + URLEncoder.encode(roomId, StandardCharsets.UTF_8));
+			response
+				.sendRedirect(ctx + "/room?roomId=" + URLEncoder.encode(roomId, StandardCharsets.UTF_8) + "&playType="
+					+ URLEncoder.encode(playType, StandardCharsets.UTF_8));
 		} catch (Exception e) {
 			e.printStackTrace();
 			response.sendRedirect(ctx + "/lobby?error=enter_failed");

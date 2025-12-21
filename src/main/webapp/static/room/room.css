@@ -85,3 +85,9 @@ button {
 button:hover {
   background: #f5f5f5;
 }
+
+.side-nav {
+	display:flex;
+	flex-direction: column;
+	justify-content: space-between;
+}

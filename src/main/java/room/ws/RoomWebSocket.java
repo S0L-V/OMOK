@@ -152,6 +152,11 @@ public class RoomWebSocket {
 					break;
 				}
 
+				case "GAME_START": {
+					service.sendIfOpen(session, "GAME_START", Map.of());
+					break;
+				}
+
 				default:
 					service.sendIfOpen(session, "ERROR", Map.of(
 						"code", "UNSUPPORTED_TYPE",

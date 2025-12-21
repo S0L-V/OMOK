@@ -77,12 +77,13 @@
   }
 
   function toRowHtml(r) {
-    const roomId = r.id ?? r.roomId ?? "";
+    const roomId = r.id ?? "";
     const roomName = r.roomName ?? "-";
     const isPublic = (String(r.isPublic) === "1") ? "공개" : "비공개 🔒";
     const playType = (String(r.playType) === "0") ? "개인전" : "팀전";
     const current = r.currentUserCnt ?? 0;
     const total = r.totalUserCnt ?? 0;
+    
 
     const disabledAttr = IS_LOGIN ? "" : "disabled";
     const titleAttr = IS_LOGIN ? "" : `title="로그인이 필요합니다."`;
@@ -95,7 +96,8 @@
         <td>${current} / ${total}</td>
         <td>
           <form class="enter-room-form" action="${CTX}/room/enter"" method="post">
-            <input type="hidden" name="roomId" value="${escapeHtml(roomId)}" />
+            <input type="hidden" name="playType" value="${escapeHtml(r.playType)}" />	
+			<input type="hidden" name="roomId" value="${escapeHtml(roomId)}" />	
             <button type="submit" ${disabledAttr} ${titleAttr}>입장</button>
           </form>
         </td>
