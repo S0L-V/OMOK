@@ -29,7 +29,7 @@
 		    <c:when test="${playType eq '1'}">팀전</c:when>
 		    <c:otherwise>알 수 없음</c:otherwise>
 		  </c:choose>
-		</p>        
+		</p>
       </div>
 
       <div class="actions">

@@ -339,14 +339,15 @@
                                 <td><fmt:formatDate value="${game.finishedAt}" pattern="MM/dd HH:mm"/></td>
                                 <td>
                                     <c:choose>
-                                        <c:when test="${game.gameResult eq '0'}"><span
+                                        <c:when test="${game.gameResult eq 'W'}"><span
                                                 style="color:blue">승리</span></c:when>
-                                        <c:when test="${game.gameResult eq '1'}"><span
+                                        <c:when test="${game.gameResult eq 'L'}"><span
                                                 style="color:red">패배</span></c:when>
-                                        <c:otherwise>무승부</c:otherwise>
+                                        <c:when test="${game.gameResult eq 'D'}"><span
+                                                style="color:red">무승부</span></c:when>
                                     </c:choose>
                                 </td>
-                                <td>${game.stoneColor eq '0' ? '⚫' : '⚪'}</td>
+                                <td>${game.stoneColor eq '1' ? '⚫' : '⚪'}</td>
                                 <td>${game.playType eq '0' ? '개인' : '팀'}</td>
                             </tr>
                         </c:forEach>
