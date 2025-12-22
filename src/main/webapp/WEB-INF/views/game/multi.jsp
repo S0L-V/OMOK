@@ -180,7 +180,7 @@
 	function goToRoomView() {
 	    setTimeout(() => {
 	        location.href = "<%= request.getContextPath() %>/room?roomId=" + encodeURIComponent(roomId) + "&playType=" + encodeURIComponent(playType);
-	    }, 500);
+	    }, 3000);
 	}
 	
 	function startTimer(sec, turnColor) {
