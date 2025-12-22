@@ -9,6 +9,8 @@ import javax.sql.DataSource;
 import util.DB;
 
 public class SinglePlayerDAOImpl implements SinglePlayerDAO {
+	private static final String STATUS_IN_ROOM = "0"; // 입장
+	private static final String STATUS_IN_GAME = "1"; // 게임 중
     /**
      * userId가 roomId 방의 멤버인지 확인한다.
      *
@@ -36,4 +38,25 @@ public class SinglePlayerDAOImpl implements SinglePlayerDAO {
             return false;
         }
     }
+    
+    @Override
+	public int updatePlayersToRoom(String roomId) throws Exception {
+
+		String sql = """
+				UPDATE room_player
+				SET status = ?
+				WHERE room_id = ?
+				  AND status = ?
+			""";
+
+		try (Connection conn = DB.getConnection();
+			PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+			pstmt.setString(1, STATUS_IN_ROOM);
+			pstmt.setString(2, roomId);
+			pstmt.setString(3, STATUS_IN_GAME);
+
+			return pstmt.executeUpdate();
+		}
+	}
 }
