@@ -1,37 +1,98 @@
 <%@ page contentType="text/html; charset=UTF-8" %>
-<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 
-<!-- 게임 화면 안에 "채팅(이모티콘)" UI만 추가하는 용도 -->
-<div class="game-chat">
-  <div class="game-chat__header">
-    <span>😀 이모티콘</span>
-    <span id="game-ws-status" class="muted">WS: 준비</span>
+<!-- 게임 중 이모지 전용 UI -->
+<div class="emoji-game-wrap">
+  <h3 class="emoji-title">게임 중 (이모지 전용)</h3>
+
+  <div class="player-cards">
+    <!-- Player 1 -->
+    <div id="p1" class="player-card">
+      <div class="profile"></div>
+      <span class="name">Player1</span>
+      <div class="bubble"></div>
+    </div>
+
+    <!-- Player 2 -->
+    <div id="p2" class="player-card">
+      <div class="profile"></div>
+      <span class="name">Player2</span>
+      <div class="bubble"></div>
+    </div>
   </div>
 
-  <div id="game-chat-log" class="game-chat__log"></div>
-
-  <div class="game-chat__emoji">
-    <!-- 필요하면 더 추가해도 됨 (value가 서버로 전송됨) -->
-    <button type="button" class="emoji-btn" data-emoji="😀">😀</button>
-    <button type="button" class="emoji-btn" data-emoji="😂">😂</button>
-    <button type="button" class="emoji-btn" data-emoji="😡">😡</button>
-    <button type="button" class="emoji-btn" data-emoji="👍">👍</button>
-    <button type="button" class="emoji-btn" data-emoji="👎">👎</button>
-    <button type="button" class="emoji-btn" data-emoji="❤️">❤️</button>
+  <!-- 이모지 버튼 -->
+  <div class="emoji-buttons">
+    <button onclick="sendEmoji('smile')">🙂</button>
+    <button onclick="sendEmoji('angry')">😡</button>
+    <button onclick="sendEmoji('clap')">👏</button>
   </div>
+
+  <div id="ws-status" class="ws-status">WS: 준비</div>
 </div>
 
-<!-- game.js는 "이모티콘 채팅 전용" 스크립트로 쓸 예정 -->
+<!-- 이모지 전용 JS -->
 <script src="${pageContext.request.contextPath}/static/game/game.js"></script>
 
 <style>
-  /* 최소 스타일(원하면 css 파일로 옮겨도 됨) */
-  .game-chat { border:1px solid #e5e7eb; border-radius:12px; padding:12px; background:#fff; }
-  .game-chat__header { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
-  .game-chat__log { height:140px; overflow:auto; border:1px solid #eee; border-radius:10px; padding:10px; background:#fafafa; }
-  .game-chat__emoji { display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }
-  .emoji-btn { padding:8px 10px; border:1px solid #ddd; border-radius:10px; background:#fff; cursor:pointer; }
-  .emoji-btn:hover { background:#f5f5f5; }
-  .muted { color:#6b7280; font-size:12px; }
-  .chat-row { margin-bottom:6px; }
+.emoji-game-wrap { margin-top:20px; }
+.emoji-title { font-weight:bold; margin-bottom:12px; }
+
+.player-cards {
+  display:flex;
+  gap:20px;
+  margin-bottom:14px;
+}
+
+.player-card {
+  position:relative;
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:12px 16px;
+  border:1px solid #ddd;
+  border-radius:14px;
+  min-width:200px;
+}
+
+.profile {
+  width:40px;
+  height:40px;
+  border-radius:50%;
+  background:#eee;
+}
+
+.name { font-weight:600; }
+
+.bubble {
+  position:absolute;
+  right:-14px;
+  top:-14px;
+  padding:6px 10px;
+  background:#fff;
+  border:1px solid #ddd;
+  border-radius:12px;
+  font-size:20px;
+  display:none;
+  box-shadow:0 2px 6px rgba(0,0,0,0.15);
+}
+
+.emoji-buttons button {
+  font-size:22px;
+  padding:6px 10px;
+  margin-right:8px;
+  border-radius:8px;
+  border:1px solid #ddd;
+  background:#fff;
+  cursor:pointer;
+}
+
+.emoji-buttons button:hover {
+  background:#f5f5f5;
+}
+
+.ws-status {
+  margin-top:8px;
+  font-size:12px;
+  color:#666;
+}
 </style>
