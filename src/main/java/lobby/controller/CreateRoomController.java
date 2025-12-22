@@ -1,6 +1,8 @@
 package lobby.controller;
 
 import java.io.IOException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
@@ -12,6 +14,9 @@ import javax.servlet.http.HttpSession;
 import lobby.ws.LobbyWebSocket;
 import room.dao.RoomDAO;
 import room.dao.RoomDAOImpl;
+import room.dao.RoomPlayerDAO;
+import room.dao.RoomPlayerDAOImpl;
+import room.dto.RoomDTO;
 
 @WebServlet("/room/create")
 public class CreateRoomController extends HttpServlet {
@@ -44,17 +49,23 @@ public class CreateRoomController extends HttpServlet {
 
 		try {
 			RoomDAO roomDAO = new RoomDAOImpl();
+			RoomPlayerDAO roomPlayerDAO = new RoomPlayerDAOImpl();
 
-			roomDAO.createRoom(
+			RoomDTO roomResult = roomDAO.createRoom(
 				hostUserId,
 				roomName,
 				roomPwd,
 				isPublic,
 				playType);
 
-			LobbyWebSocket.broadcastRoomList();
+			String roomId = roomResult.getId();
 
-			response.sendRedirect(request.getContextPath() + "/lobby");
+			roomPlayerDAO.enterIfAbsent(roomResult.getId(), hostUserId);
+
+			LobbyWebSocket.broadcastRoomList();
+			response.sendRedirect(
+				request.getContextPath() + "/room?roomId=" + URLEncoder.encode(roomId, StandardCharsets.UTF_8)
+					+ "&playType=" + URLEncoder.encode(playType, StandardCharsets.UTF_8));
 		} catch (Exception e) {
 			e.printStackTrace();
 			throw new ServletException("방 생성 실패", e);
