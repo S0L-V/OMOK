@@ -279,6 +279,48 @@
             color: #888;
             text-align: center;
         }
+
+        /* 컨텍스트 메뉴 (우클릭 메뉴) */
+        .context-menu {
+            position: fixed;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+            padding: 5px 0;
+            min-width: 120px;
+            z-index: 1000;
+            display: none;
+        }
+
+        .context-menu-item {
+            padding: 8px 15px;
+            cursor: pointer;
+            font-size: 14px;
+            color: #333;
+        }
+
+        .context-menu-item:hover {
+            background: #f5f5f5;
+        }
+
+        .context-menu-item.danger {
+            color: #f44336;
+        }
+
+        .context-menu-item.danger:hover {
+            background: #ffebee;
+        }
+
+        /* 친구 목록 아이템에 호버 효과 */
+        .friend-item {
+            cursor: pointer;
+            position: relative;
+        }
+
+        .friend-item:hover {
+            background: #f9f9f9;
+        }
     </style>
 </head>
 <body>
@@ -405,7 +447,10 @@
                     </c:when>
                     <c:otherwise>
                         <c:forEach var="friend" items="${myFriends}">
-                            <li class="friend-item">
+                            <li class="friend-item"
+                                data-friend-user-id="${friend.userId}"
+                                data-friend-id="${friend.friendId}"
+                                data-friend-nickname="${friend.nickname}">
                                 <div class="f-avatar">${friend.nickname.charAt(0)}</div>
                                 <div class="f-info">
                                     <div class="f-name">${friend.nickname}</div>
@@ -419,6 +464,13 @@
                 </c:choose>
             </ul>
         </div>
+    </div>
+</div>
+
+<!-- 컨텍스트 메뉴 (우클릭 메뉴) -->
+<div id="friendContextMenu" class="context-menu">
+    <div class="context-menu-item danger" onclick="removeFriendFromMenu()">
+        🗑️ 친구 삭제
     </div>
 </div>
 
@@ -629,6 +681,72 @@
                 console.error(err);
                 alert("서버 오류 발생");
             });
+    }
+
+    // ============================================
+    // 친구 삭제 (우클릭 메뉴)
+    // ============================================
+    const contextMenu = document.getElementById("friendContextMenu");
+    let selectedFriendData = null;
+
+    // 모든 친구 아이템에 우클릭 이벤트 추가
+    document.querySelectorAll(".friend-item").forEach(item => {
+        item.addEventListener("contextmenu", function(e) {
+            e.preventDefault(); // 기본 우클릭 메뉴 방지
+
+            // 선택된 친구 정보 저장
+            selectedFriendData = {
+                userId: this.dataset.friendUserId,
+                friendId: this.dataset.friendId,
+                nickname: this.dataset.friendNickname
+            };
+
+            // 컨텍스트 메뉴 위치 설정
+            contextMenu.style.left = e.pageX + "px";
+            contextMenu.style.top = e.pageY + "px";
+            contextMenu.style.display = "block";
+        });
+    });
+
+    // 메뉴 외부 클릭 시 숨기기
+    document.addEventListener("click", function() {
+        contextMenu.style.display = "none";
+    });
+
+    // 친구 삭제 실행
+    function removeFriendFromMenu() {
+        if (!selectedFriendData) return;
+
+        const nickname = selectedFriendData.nickname;
+
+        if (!confirm(nickname + "님을 친구 목록에서 삭제하시겠습니까?")) {
+            return;
+        }
+
+        // 친구 ID 결정: userId와 friendId 중 내가 아닌 것
+        const myUserId = "${userInfo.userId}";
+        const targetFriendId = (selectedFriendData.userId === myUserId)
+            ? selectedFriendData.friendId
+            : selectedFriendData.userId;
+
+        fetch(CTX + '/friend/remove', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({friendId: targetFriendId})
+        })
+        .then(res => res.json())
+        .then(json => {
+            if (json.success) {
+                alert("친구를 삭제했습니다.");
+                location.reload(); // 페이지 새로고침
+            } else {
+                alert(json.message || "친구 삭제 실패");
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            alert("서버 오류 발생");
+        });
     }
 </script>
 
