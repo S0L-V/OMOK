@@ -116,6 +116,7 @@ public class GameResultServiceImpl implements GameResultService {
 
 		// 통계 계산
 		String result = player.getGameResult();
+		int currentCoin = userInfo.getCoin();
 
 		if ("W".equals(result)) {
 			// 승리
@@ -128,6 +129,10 @@ public class GameResultServiceImpl implements GameResultService {
 				userInfo.setCurrentStreak(1);
 			}
 
+			// 코인 획득 (+1000)
+			userInfo.setCoin(currentCoin + 1000);
+			System.out.println("[Coin] " + player.getUserId() + " 승리 보상: +1000 (총: " + (currentCoin + 1000) + ")");
+
 		} else if ("L".equals(result)) {
 			// 패배
 			userInfo.setTotalLose(userInfo.getTotalLose() + 1);
@@ -138,10 +143,17 @@ public class GameResultServiceImpl implements GameResultService {
 			} else {
 				userInfo.setCurrentStreak(-1);
 			}
+
+			// 코인 차감 (-500, 최소 0)
+			int newCoin = Math.max(0, currentCoin - 500);
+			userInfo.setCoin(newCoin);
+			System.out.println("[Coin] " + player.getUserId() + " 패배 차감: -500 (총: " + newCoin + ")");
+
 		} else if ("D".equals(result)) {
-			// 무승부
+			// 무승부 (코인 변동 없음)
 			userInfo.setTotalDraw(userInfo.getTotalDraw() + 1);
 			userInfo.setCurrentStreak(0);
+			System.out.println("[Coin] " + player.getUserId() + " 무승부: 변동 없음 (총: " + currentCoin + ")");
 		}
 
 		// 최대 연승 갱신
