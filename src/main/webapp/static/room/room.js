@@ -191,6 +191,8 @@
 		  
 		  console.log("[WS GAME START]", roomId, playType);
 		  if (!roomId || !playType) return;
+		  
+		  ws.close(1000, "NAVIGATE_TO_GAME");
 		
 		  if (String(playType) === "0") {
 		    location.href = `/game/single?roomId=${encodeURIComponent(roomId)}`;
