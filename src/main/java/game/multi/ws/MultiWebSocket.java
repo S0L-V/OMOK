@@ -12,6 +12,8 @@ import javax.websocket.Session;
 import javax.websocket.server.ServerEndpoint;
 
 import config.WebSocketConfig;
+import game.multi.dao.MultiPlayerDAO;
+import game.multi.dao.MultiPlayerDAOImpl;
 import game.multi.service.MultiGameService;
 import game.multi.service.MultiGameService.SendJob;
 
@@ -19,6 +21,8 @@ import game.multi.service.MultiGameService.SendJob;
 public class MultiWebSocket {
 
 	private static final MultiGameService service = new MultiGameService();
+	
+	private static final MultiPlayerDAO multiPlayerDao = new MultiPlayerDAOImpl();
 
 	@OnOpen
     public void onOpen(Session session, EndpointConfig config) {
@@ -38,10 +42,17 @@ public class MultiWebSocket {
                 // 방 ID가 없으면 에러 처리 혹은 기본방("default")
                 roomId = "default"; 
             }
+            
+            // DB로 방 멤버 검증
+            if (!multiPlayerDao.isMember(roomId, userId)) {
+            	session.close();
+            	return;
+            }
 
             // Service에 roomId와 userId 함께 전달
             List<SendJob> jobs = service.handleOpen(session, roomId, userId);
             dispatch(session, jobs);
+            
         } catch (Exception e) {
             e.printStackTrace();
         }
