@@ -56,7 +56,7 @@
 		wsProtocol + "://" +
 		location.host +
 		contextPath +
-		"/game/multi?roomId=" +
+		"/game/multi/ws?roomId=" +
 		encodeURIComponent(roomId);
 	console.log("접속 시도 URL:", wsUrl);
 	const ws = new WebSocket(wsUrl);

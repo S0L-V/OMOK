@@ -15,7 +15,7 @@ import config.WebSocketConfig;
 import game.multi.service.MultiGameService;
 import game.multi.service.MultiGameService.SendJob;
 
-@ServerEndpoint(value = "/game/multi", configurator = WebSocketConfig.class)
+@ServerEndpoint(value = "/game/multi/ws", configurator = WebSocketConfig.class)
 public class MultiWebSocket {
 
 	private static final MultiGameService service = new MultiGameService();
