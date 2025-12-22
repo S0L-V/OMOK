@@ -19,6 +19,9 @@ import javax.websocket.server.ServerEndpoint;
 import com.google.gson.JsonSyntaxException;
 
 import config.WebSocketConfig;
+import lobby.ws.LobbyWebSocket;
+import room.service.RoomService;
+import session.RoomTransitionRegistry;
 import session.SessionContext;
 import util.Parser;
 
@@ -41,6 +44,7 @@ public class RoomWebSocket {
 
 	private static final SessionContext sessionContext = SessionContext.getInstance();
 	private final RoomWebSocketService service = new RoomWebSocketService();
+	private final RoomService roomService = new RoomService();
 
 	@OnOpen
 	public void onOpen(Session session, EndpointConfig config) {
@@ -175,14 +179,52 @@ public class RoomWebSocket {
 		}
 	}
 
+	private final RoomTransitionRegistry transitionRegistry = RoomTransitionRegistry.getInstance();
+
 	@OnClose
 	public void onClose(Session session, CloseReason reason) {
 		System.out.println("[RoomWS] CLOSE wsSessionId=" + session.getId()
 			+ " code=" + reason.getCloseCode()
 			+ " reason=" + reason.getReasonPhrase());
 
-		service.cleanup(session);
-		sessionContext.disconnectSession(session);
+		String roomId = sessionContext.getRoomId(session);
+		String userId = sessionContext.getUserId(session);
+
+		boolean hasCtx = roomId != null && !roomId.isBlank() && userId != null && !userId.isBlank();
+
+		boolean isNavigateClose = reason != null
+			&& reason.getCloseCode() != null
+			&& reason.getCloseCode().getCode() == 1000
+			&& "NAVIGATE_TO_GAME".equals(reason.getReasonPhrase());
+
+		boolean isTransition = hasCtx && transitionRegistry.isMoving(roomId, userId);
+
+		try {
+			if (hasCtx && (isNavigateClose || isTransition)) {
+				System.out.println("[RoomWS] skip exit (transition) roomId=" + roomId + " userId=" + userId
+					+ " by=" + (isNavigateClose ? "CloseReason" : "Registry"));
+
+				service.cleanup(session);
+				sessionContext.disconnectSession(session);
+				if (isTransition)
+					transitionRegistry.clear(roomId, userId);
+				return;
+			}
+
+			if (hasCtx) {
+				String result = roomService.exitAndHandleHost(roomId, userId);
+				System.out.println("[RoomWS][EXIT] roomId=" + roomId + " userId=" + userId + " result=" + result);
+
+				service.onExit(session, roomId);
+				LobbyWebSocket.broadcastRoomList();
+			}
+		} catch (Exception e) {
+			System.err.println("[RoomWS] onClose failed roomId=" + roomId + " userId=" + userId);
+			e.printStackTrace();
+		} finally {
+			service.cleanup(session);
+			sessionContext.disconnectSession(session);
+		}
 	}
 
 	@OnError

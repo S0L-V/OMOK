@@ -155,6 +155,16 @@ public class LobbyWebSocket {
 		}
 	}
 
+	public void sendHostAutoEnter(Session s, String roomId, String roomName, int playType, String hostUserId) {
+		Map<String, Object> payload = new HashMap<>();
+		payload.put("roomId", roomId);
+		payload.put("roomName", roomName);
+		payload.put("playType", playType);
+		payload.put("hostUserId", hostUserId);
+
+		sendRawIfOpen(s, "ROOM_AUTO_ENTER", payload);
+	}
+
 	/**
 	 * LobbyWebSocketService를 거치지 않고도 간단 payload 전송이 필요할 때 사용.
 	 * (CONNECTED 같은 초기 메시지 용)
