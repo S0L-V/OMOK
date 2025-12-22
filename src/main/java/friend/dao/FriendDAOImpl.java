@@ -77,11 +77,24 @@ public class FriendDAOImpl implements FriendDAO {
 
 	@Override
 	public List<FriendDTO> findAcceptedFriends(String userId) throws SQLException {
+		// CASE 문을 제거하고 OR 조건으로 두 가지 경우를 모두 처리
 		String query = """
-				SELECT id, user_id, friend_id, status, created_at
-				FROM friend
-				WHERE status = 'ACCEPTED'
-				  AND (user_id = ? OR friend_id = ?)
+			    SELECT 
+			        f.id, 
+			        f.user_id, 
+			        f.friend_id, 
+			        f.status, 
+			        f.created_at,
+			        u.nickname,
+			        u.total_win,
+			        u.total_lose,
+			        u.win_rate
+			    FROM friend f
+			    INNER JOIN user_info u ON (
+			        (f.user_id = ? AND u.user_id = f.friend_id) OR
+			        (f.friend_id = ? AND u.user_id = f.user_id)
+			    )
+			    WHERE f.status = 'ACCEPTED'
 			""";
 
 		List<FriendDTO> list = new ArrayList<>();
@@ -94,7 +107,17 @@ public class FriendDAOImpl implements FriendDAO {
 
 			try (ResultSet rs = pstmt.executeQuery()) {
 				while (rs.next()) {
-					list.add(mapRow(rs));
+					list.add(FriendDTO.builder()
+						.id(rs.getString("id"))
+						.userId(rs.getString("user_id"))
+						.friendId(rs.getString("friend_id"))
+						.status(rs.getString("status"))
+						.createdAt(rs.getTimestamp("created_at"))
+						.nickname(rs.getString("nickname"))
+						.totalWin(rs.getInt("total_win"))
+						.totalLose(rs.getInt("total_lose"))
+						.winRate(rs.getDouble("win_rate"))
+						.build());
 				}
 			}
 		} catch (Exception e) {
@@ -153,10 +176,21 @@ public class FriendDAOImpl implements FriendDAO {
 
 	@Override
 	public List<FriendDTO> findPendingRequests(String userId) throws SQLException {
+		// user_info 테이블과 JOIN하여 요청자의 정보를 함께 가져오기
 		String query = """
-			    SELECT id, user_id, friend_id, status, created_at
-			    FROM friend
-			    WHERE friend_id = ? AND status = 'PENDING'
+			    SELECT 
+			        f.id, 
+			        f.user_id, 
+			        f.friend_id, 
+			        f.status, 
+			        f.created_at,
+			        u.nickname,
+			        u.total_win,
+			        u.total_lose,
+			        u.win_rate
+			    FROM friend f
+			    INNER JOIN user_info u ON f.user_id = u.user_id
+			    WHERE f.friend_id = ? AND f.status = 'PENDING'
 			""";
 
 		List<FriendDTO> list = new ArrayList<>();
@@ -168,7 +202,17 @@ public class FriendDAOImpl implements FriendDAO {
 
 			try (ResultSet rs = pstmt.executeQuery()) {
 				while (rs.next()) {
-					list.add(mapRow(rs));
+					list.add(FriendDTO.builder()
+						.id(rs.getString("id"))
+						.userId(rs.getString("user_id"))
+						.friendId(rs.getString("friend_id"))
+						.status(rs.getString("status"))
+						.createdAt(rs.getTimestamp("created_at"))
+						.nickname(rs.getString("nickname"))          // 추가
+						.totalWin(rs.getInt("total_win"))            // 추가
+						.totalLose(rs.getInt("total_lose"))          // 추가
+						.winRate(rs.getDouble("win_rate"))           // 추가
+						.build());
 				}
 			}
 
