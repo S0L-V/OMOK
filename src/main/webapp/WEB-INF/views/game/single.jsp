@@ -157,7 +157,6 @@
 	        }, 3000);
 	    });
 	}
-
 	
 	/* 보드 클릭(돌 두기) */
 	canvas.addEventListener("click", e => {
