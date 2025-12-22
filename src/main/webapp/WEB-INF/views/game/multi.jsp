@@ -50,7 +50,7 @@
 		console.warn("playType이 multi가 아닙니다.:", playType);
 	}
 	
-	const wsProtocol = (location.protocl === "https:") ? "wss" : "ws";
+	const wsProtocol = (location.protocol === "https:") ? "wss" : "ws";
 	const contextPath = "<%= request.getContextPath() %>";
 	const wsUrl = 
 		wsProtocol + "://" +
