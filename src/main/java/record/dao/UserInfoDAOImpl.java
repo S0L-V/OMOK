@@ -43,6 +43,7 @@ public class UserInfoDAOImpl implements UserInfoDAO {
 					current_streak = ?,
 					max_win_streak = ?,
 					win_rate = ?,
+					coin = ?,
 					last_game_date = ?
 				WHERE user_id = ?
 			""";
@@ -56,8 +57,9 @@ public class UserInfoDAOImpl implements UserInfoDAO {
 			pstmt.setInt(4, userInfo.getCurrentStreak());
 			pstmt.setInt(5, userInfo.getMaxWinStreak());
 			pstmt.setDouble(6, userInfo.getWinRate());
-			pstmt.setTimestamp(7, userInfo.getLastGameDate());
-			pstmt.setString(8, userInfo.getUserId());
+			pstmt.setInt(7, userInfo.getCoin());
+			pstmt.setTimestamp(8, userInfo.getLastGameDate());
+			pstmt.setString(9, userInfo.getUserId());
 
 			updated = pstmt.executeUpdate();
 
