@@ -1,6 +1,9 @@
 package game.single.ws;
 
+import java.io.IOException;
 import java.util.List;
+import java.util.Set;
+import java.util.concurrent.CopyOnWriteArraySet;
 
 import javax.servlet.http.HttpSession;
 import javax.websocket.EndpointConfig;
@@ -28,6 +31,9 @@ public class SingleWebSocket {
 
     // ✅ 너 프로젝트에서 로비에서 쓰던 sessionContext를 그대로 사용(전역/싱글톤/DI 방식에 맞춰)
     private static final SessionContext sessionContext = SessionContext.getInstance();
+    
+    // 채팅
+    private static final Set<Session> sessions = new CopyOnWriteArraySet<>();
 	
     private String getRoomId(Session session) {
     	List<String> ids = session.getRequestParameterMap().get("roomId");
@@ -77,6 +83,19 @@ public class SingleWebSocket {
 
 	@OnMessage
 	public void onMessage(String msg, Session session) throws Exception {
+		
+		/* 이모티콘 채팅 메시지면 게임로직으로 안 넘기고 브로드캐스트 */
+		/* 예시: EMOJI_CHAT:😀   또는  EMOJI_CHAT:heart */
+		if (msg != null && msg.startsWith("EMOJI_CHAT:")) {
+			String emoji = msg.substring("EMOJI_CHAT:".length()); // ":" 뒤
+			emoji = emoji == null ? "" : emoji.trim();
+
+			if (!emoji.isEmpty()) {
+				broadcast("{\"type\":\"EMOJI_CHAT\",\"payload\":{\"emoji\":\"" + escapeJson(emoji) + "\"}}");
+			}
+			return;
+		}
+		
 //		service.onMessage(msg, session);
 		String roomId = (String) session.getUserProperties().get("roomId");
         SingleGameServiceImpl service = manager.getOrCreate(roomId);
@@ -90,8 +109,30 @@ public class SingleWebSocket {
 		String roomId = (String) session.getUserProperties().get("roomId");
         SingleGameServiceImpl service = manager.getOrCreate(roomId);
         service.onClose(session);
+	}
+	
+	private void broadcast(String json) {
+		for (Session s : sessions) {
+			if (s == null || !s.isOpen())
+				continue;
+			try {
+				s.getBasicRemote().sendText(json);
+			} catch (IOException e) {
+				// 보내기 실패하면 세션 제거
+				try {
+					s.close();
+				} catch (Exception ignore) {}
+				sessions.remove(s);
+			}
+		}
+	}
 
-        // (선택) 게임이 완전히 끝났으면 remove하도록 개선 가능
-        // manager.remove(gameId);
+	/* JSON 문자열 처리 (따옴표/역슬래시/개행) */
+	private static String escapeJson(String s) {
+		return s
+			.replace("\\", "\\\\")
+			.replace("\"", "\\\"")
+			.replace("\n", "\\n")
+			.replace("\r", "\\r");
 	}
 }

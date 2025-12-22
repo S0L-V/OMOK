@@ -11,6 +11,7 @@
 </head>
 <body>
 	<h1>오목 게임</h1>
+	<div id="status">대기 중...</div>
 	<canvas id="board" width="450" height="450"></canvas>
 	<div id="log"></div>
 	<div id="timer" style="font-size:20px; font-weight:bold;"></div>
@@ -18,6 +19,7 @@
 	
 	<button onclick="giveUp()" style="margin-top:10px; padding: 5px 10px;">기권하기</button>
 	<script>
+	const statusDiv = document.getElementById("status");
 	const passDiv = document.getElementById("pass");
 	const canvas = document.getElementById("board");
 	const ctx = canvas.getContext("2d");
@@ -57,15 +59,20 @@
 	  
 	const ws = new WebSocket(wsUrl);
 	
-	//let ws = new WebSocket(
-	//    "ws://localhost:8081/omok"
-	//);
-	
-	
-	ws.onopen = () => log("서버 연결");
+	ws.onopen = () => log("서버에 연결되었습니다. 매칭을 기다립니다...");
 	ws.onmessage = e => handle(JSON.parse(e.data)); //객체로 받음
+	ws.onclose = () => {
+        log("연결이 종료되었습니다.");
+        statusDiv.innerText = "연결 끊김";
+    };
 	
 	function handle(data) {
+		if (data.type === "SINGLE_WAIT") {
+			statusDiv.innerText = data.msg;
+			log(data.msg);
+			return;
+		}
+		
 	    if (data.type === "SINGLE_START") {
 	        myColor = data.color;
 	        log(myColor === 1 ? "당신은 흑돌" : "당신은 백돌");
@@ -100,6 +107,7 @@
 	    	winner = data.color;
 	    	passDiv.innerText = (winner === 1 ? "흑돌이 이겼습니다!!" : "백돌이 이겼습니다!!");
 	    	clearInterval(timer);
+	    	goToRoomView();
 	    	
 	    }
 	    
@@ -111,6 +119,7 @@
 	    		passDiv.innerText = (winner === 1 ? "흑돌이 기권했습니다!! 백돌 승!!" : "백돌이 기권했습니다!! 흑돌 승!!");
 	    	}
 	    	clearInterval(timer);
+	    	goToRoomView();
 	    }
 	}
 	
@@ -118,9 +127,13 @@
 	function giveUp() {
 		if(confirm('기권하시겠습니까?')) {
 			ws.send(JSON.stringify({ type: "SINGLE_GIVEUP" }));
-			//ws.send(JSON.stringify({command: "giveup"}));
-			//방 링크: location.href = '/pro17/member/delMember.do?id=' + id;
 		}
+	}
+	
+	function goToRoomView() {
+	    setTimeout(() => {
+	        location.href = "<%= request.getContextPath() %>/room?roomId=" + encodeURIComponent(roomId) + "&playType=" + encodeURIComponent(playType);
+	    }, 3000);
 	}
 	
 	/* 보드 클릭(돌 두기) */

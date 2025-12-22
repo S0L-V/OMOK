@@ -11,6 +11,5 @@ public class GameContextListener implements ServletContextListener {
     @Override
     public void contextDestroyed(ServletContextEvent sce) {
         SingleGameServiceManager.getInstance().destroy();
-//      MultiGameServiceManager.getInstance().destroy();
     }
 }

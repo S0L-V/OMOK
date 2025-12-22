@@ -14,6 +14,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.websocket.Session;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonObject;
+
 public class SingleGameServiceImpl implements SingleGameService {
 
 //	private static SingleGameServiceImpl instance = new SingleGameServiceImpl();
@@ -27,6 +30,7 @@ public class SingleGameServiceImpl implements SingleGameService {
 	private AtomicInteger turn = new AtomicInteger(0);
 	private int[][] board = new int[15][15];
 	private AtomicBoolean gameOver = new AtomicBoolean(false);
+	private final Gson gson = new Gson();
 
 	private final String roomId;
 	private final java.util.Map<Session, String> sessionToUserId = new java.util.concurrent.ConcurrentHashMap<>();
@@ -43,31 +47,57 @@ public class SingleGameServiceImpl implements SingleGameService {
 	
 	@Override
 	public synchronized void onOpen(Session session, String userId) throws Exception {
-		// 방 정보 받아오기
 		if (players.size() >= 2) {
-			session.close();
-			return;
-		}
+	        session.close();
+	        return;
+	    }
 
-		players.add(session);
-		sessionToUserId.put(session, userId);
-		System.out.println("접속: " + session.getId());
-		int color = players.size();
+	    // 1) 먼저 등록
+	    players.add(session);
+	    sessionToUserId.put(session, userId);
 
-		session.getBasicRemote()
-			.sendText("{ \"type\":\"SINGLE_START\", \"color\":" + color + "}");
+	    System.out.println("접속: " + session.getId());
 
-		if (players.size() == 2) {
-			turn.set(0);
-			broadcastTurn();
-			startTurnTimer();
-		}
+	    // 2) 아직 2명 안 찼으면 WAIT 브로드캐스트
+	    if (players.size() < 2) {
+
+	        String jsonStr =
+	            "{ \"type\":\"SINGLE_WAIT\", " +
+	            "\"msg\":\"다른 플레이어를 기다리는 중입니다... (" + players.size() + "/2)\" }";
+
+	        for (Session s : players) {
+	            try {
+	                s.getBasicRemote().sendText(jsonStr);
+	            } catch (Exception e) {
+	                e.printStackTrace();
+	            }
+	        }
+	        return;
+	    }
+
+	    // 3) 2명 찼으면 START를 각각 보내기(각자 색 다르게!)
+	    for (int i = 0; i < players.size(); i++) {
+	        Session s = players.get(i);
+	        int color = i + 1; // 1=흑, 2=백
+	        s.getBasicRemote().sendText("{ \"type\":\"SINGLE_START\", \"color\":" + color + " }");
+	    }
+
+	    // 4) 게임 시작
+	    turn.set(0);
+	    bpass = 0;
+	    wpass = 0;
+	    gameOver.set(false);
+
+	    broadcastTurn();
+	    startTurnTimer();
 	}
 
 	@Override
 	public synchronized void onMessage(String msg, Session session) throws Exception {
 		if (gameOver.get())
 			return;
+		
+		JsonObject json = gson.fromJson(msg, JsonObject.class);
 
 		if (msg.contains("SINGLE_GIVEUP")) {
 			int loserIdx = players.indexOf(session);
@@ -89,23 +119,28 @@ public class SingleGameServiceImpl implements SingleGameService {
 			for (Session s : players) {
 				s.getBasicRemote().sendText(
 					"{ \"type\":\"SINGLE_GIVEUP\", \"losercolor\":" + (loserIdx + 1) + "}");
-				/*s.getBasicRemote().sendText(
-				 *  {gameId, roomeId, userId, stonecolor, gameresult}*/
 			}
 			return;
 		}
 
 		if (players.get(turn.get()) != session)
 			return;
-
-		msg = msg.replaceAll("[^0-9,]", "");
-		String[] arr = msg.split(",");
-		int x = Integer.parseInt(arr[0]);
-		int y = Integer.parseInt(arr[1]);
-
-		if (board[y][x] != 0)
+		
+		if (!json.has("x") || !json.has("y")) {
 			return;
+		}
 
+		int x = json.get("x").getAsInt();
+		int y = json.get("y").getAsInt();
+
+        // 좌표 범위 체크
+        if (x < 0 || x >= 15 || y < 0 || y >= 15) {
+        	return;
+        }
+        
+		if (board[y][x] != 0) {
+			return;
+		}
 		int color = turn.get() + 1;
 		board[y][x] = color;
 
@@ -134,8 +169,6 @@ public class SingleGameServiceImpl implements SingleGameService {
 			for (Session s : players) {
 				s.getBasicRemote().sendText(
 					"{ \"type\":\"SINGLE_WIN\", \"color\":" + wincolor + " }");
-				/*s.getBasicRemote().sendText(
-				 *  {gameId, roomeId, userId, stonecolor, gameresult}*/
 			}
 			return;
 		}
@@ -191,8 +224,6 @@ public class SingleGameServiceImpl implements SingleGameService {
 					try {
 						s.getBasicRemote().sendText(
 							"{ \"type\":\"SINGLE_GIVEUP\", \"losercolor\":" + lose + "}");
-						/*s.getBasicRemote().sendText(
-						 *  {gameId, roomeId, userId, stonecolor, gameresult}*/
 					} catch (Exception e) {}
 				}
 				return;
@@ -234,8 +265,6 @@ public class SingleGameServiceImpl implements SingleGameService {
         if (turnTask != null) {
             turnTask.cancel(false);
         }
-        // 여기서는 scheduler.shutdown 하지 마세요!
-        // scheduler는 manager가 공유로 갖고 있고 manager.destroy()에서 종료합니다.
     }
 	
 	private void saveGameResultToAPI(String roomId, String winnerId, int winnerIdx, String loserId, int loserIdx) {
