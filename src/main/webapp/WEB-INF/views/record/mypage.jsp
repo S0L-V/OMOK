@@ -333,7 +333,6 @@
                 <div class="profile-avatar">👤</div>
                 <div>
                     <h2>${userInfo.nickname}</h2>
-                    <span style="color: #666; font-size: 14px;">ID: ${userInfo.userId}</span>
                 </div>
             </div>
 
