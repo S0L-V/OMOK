@@ -27,7 +27,7 @@ public class SingleWebSocket {
 	private static final SinglePlayerDAO singlePlayerDao = new SinglePlayerDAOImpl();
 	private static final SessionContext sessionContext = SessionContext.getInstance();
 
-	// roomId -> sessions (같은 방에만 브로드캐스트)
+	// roomId -> sessions
 	private static final ConcurrentHashMap<String, CopyOnWriteArraySet<Session>> roomSessions = new ConcurrentHashMap<>();
 
 	private String getRoomId(Session session) {
@@ -52,7 +52,7 @@ public class SingleWebSocket {
 		sessionContext.connectSession(session, httpSession);
 
 		String userId = sessionContext.getUserId(session);
-		if (userId == null || userId.isBlank()) {
+		if (userId == null) {
 			session.close();
 			return;
 		}
@@ -72,20 +72,34 @@ public class SingleWebSocket {
 		session.getUserProperties().put("userId", userId);
 		session.getUserProperties().put("nickname", nickname);
 
-		// 방 세션 등록
+		/* 방 세션 set 가져오기 */
 		CopyOnWriteArraySet<Session> set = roomSessions.computeIfAbsent(roomId, k -> new CopyOnWriteArraySet<>());
+
+		/* 기존에 방에 있던 유저 정보를 새로 들어온 session에게 먼저 보내기 */
+		for (Session s : set) {
+			if (s == null || !s.isOpen())
+				continue;
+
+			String existUserId = (String)s.getUserProperties().get("userId");
+			String existNick = (String)s.getUserProperties().get("nickname");
+			if (existUserId == null)
+				continue;
+			if (existNick == null || existNick.isBlank())
+				existNick = existUserId;
+
+			sendSingleUser(session, existUserId, existNick);
+		}
+
+		/*이제 현재 session을 set에 추가 */
 		set.add(session);
+
+		/* 새로 들어온 유저 정보를 방 전체에 알리기 (상대들도 닉네임 갱신) */
+		broadcastSingleUser(roomId, userId, nickname);
 
 		System.out.println("[SingleWS] CONNECT session=" + session.getId()
 			+ " userId=" + userId + " nick=" + nickname + " roomId=" + roomId);
 
-		// ✅ 1) 새로 들어온 사람에게: 기존 유저들(=이미 들어와 있던 상대) 목록을 먼저 보냄
-		sendExistingUsersTo(session, roomId);
-
-		// ✅ 2) 그리고 이 사람 정보를: 방 전체(나 포함)에 브로드캐스트
-		broadcast(roomId, singleUserJson(userId, nickname));
-
-		// 게임 서비스 연결
+		/* 게임 서비스 연결 */
 		SingleGameServiceImpl service = manager.getOrCreate(roomId);
 		service.onOpen(session, userId);
 	}
@@ -100,30 +114,37 @@ public class SingleWebSocket {
 		String nickname = (String)session.getUserProperties().get("nickname");
 		if (roomId == null || userId == null)
 			return;
+		if (nickname == null || nickname.isBlank())
+			nickname = userId;
 
-		// 문자열 포맷 이모지: "EMOJI_CHAT:smile"
+		/* 문자열 포맷 이모지: EMOJI_CHAT:smile */
 		if (msg.startsWith("EMOJI_CHAT:")) {
 			String emoji = msg.substring("EMOJI_CHAT:".length()).trim();
 			if (!emoji.isEmpty()) {
-				broadcast(roomId, emojiJson(userId, nickname, emoji));
+				broadcast(roomId,
+					"{\"type\":\"EMOJI_CHAT\",\"payload\":{\"from\":\"" + escapeJson(userId)
+						+ "\",\"fromNick\":\"" + escapeJson(nickname)
+						+ "\",\"emoji\":\"" + escapeJson(emoji) + "\"}}");
 			}
 			return;
 		}
 
-		// JSON 포맷도 허용: {"type":"EMOJI_CHAT","emoji":"smile"}
+		/* JSON 포맷도 허용: {"type":"EMOJI_CHAT","emoji":"smile"} */
 		String trimmed = msg.trim();
 		if (trimmed.startsWith("{") && trimmed.contains("\"type\"") && trimmed.contains("EMOJI_CHAT")) {
 			String type = extractJsonString(trimmed, "type");
 			if ("EMOJI_CHAT".equals(type)) {
 				String emoji = extractJsonString(trimmed, "emoji");
 				if (emoji != null && !emoji.isBlank()) {
-					broadcast(roomId, emojiJson(userId, nickname, emoji.trim()));
+					broadcast(roomId,
+						"{\"type\":\"EMOJI_CHAT\",\"payload\":{\"from\":\"" + escapeJson(userId)
+							+ "\",\"fromNick\":\"" + escapeJson(nickname)
+							+ "\",\"emoji\":\"" + escapeJson(emoji.trim()) + "\"}}");
 				}
 				return;
 			}
 		}
 
-		// 나머지는 게임 로직
 		SingleGameServiceImpl service = manager.getOrCreate(roomId);
 		service.onMessage(msg, session);
 	}
@@ -131,6 +152,7 @@ public class SingleWebSocket {
 	@OnClose
 	public void onClose(Session session) {
 		String roomId = (String)session.getUserProperties().get("roomId");
+
 		if (roomId != null) {
 			CopyOnWriteArraySet<Session> set = roomSessions.get(roomId);
 			if (set != null) {
@@ -144,39 +166,25 @@ public class SingleWebSocket {
 		}
 	}
 
-	// ===== helpers =====
-
-	private void sendExistingUsersTo(Session target, String roomId) {
-		CopyOnWriteArraySet<Session> set = roomSessions.get(roomId);
-		if (set == null)
+	/* SINGLE_USER 전송(단일 세션) */
+	private void sendSingleUser(Session to, String userId, String nickname) {
+		if (to == null || !to.isOpen())
 			return;
-
-		for (Session s : set) {
-			if (s == null || !s.isOpen())
-				continue;
-
-			String uid = (String)s.getUserProperties().get("userId");
-			String nick = (String)s.getUserProperties().get("nickname");
-			if (uid == null)
-				continue;
-			if (nick == null || nick.isBlank())
-				nick = uid;
-
-			sendTo(target, singleUserJson(uid, nick));
-		}
+		try {
+			to.getBasicRemote().sendText(
+				"{\"type\":\"SINGLE_USER\",\"payload\":{\"userId\":\"" + escapeJson(userId)
+					+ "\",\"nickname\":\"" + escapeJson(nickname) + "\"}}");
+		} catch (IOException ignore) {}
 	}
 
-	private String singleUserJson(String userId, String nickname) {
-		return "{\"type\":\"SINGLE_USER\",\"payload\":{\"userId\":\"" + escapeJson(userId)
-			+ "\",\"nickname\":\"" + escapeJson(nickname) + "\"}}";
+	/* SINGLE_USER 브로드캐스트(방 단위) */
+	private void broadcastSingleUser(String roomId, String userId, String nickname) {
+		broadcast(roomId,
+			"{\"type\":\"SINGLE_USER\",\"payload\":{\"userId\":\"" + escapeJson(userId)
+				+ "\",\"nickname\":\"" + escapeJson(nickname) + "\"}}");
 	}
 
-	private String emojiJson(String userId, String nickname, String emojiKey) {
-		return "{\"type\":\"EMOJI_CHAT\",\"payload\":{\"from\":\"" + escapeJson(userId)
-			+ "\",\"fromNick\":\"" + escapeJson(nickname)
-			+ "\",\"emoji\":\"" + escapeJson(emojiKey) + "\"}}";
-	}
-
+	/* 같은 roomId에만 브로드캐스트 */
 	private void broadcast(String roomId, String json) {
 		CopyOnWriteArraySet<Session> set = roomSessions.get(roomId);
 		if (set == null)
@@ -185,17 +193,14 @@ public class SingleWebSocket {
 		for (Session s : set) {
 			if (s == null || !s.isOpen())
 				continue;
-			sendTo(s, json);
-		}
-	}
-
-	private void sendTo(Session s, String json) {
-		try {
-			s.getBasicRemote().sendText(json);
-		} catch (IOException e) {
 			try {
-				s.close();
-			} catch (Exception ignore) {}
+				s.getBasicRemote().sendText(json);
+			} catch (IOException e) {
+				try {
+					s.close();
+				} catch (Exception ignore) {}
+				set.remove(s);
+			}
 		}
 	}
 
@@ -208,7 +213,7 @@ public class SingleWebSocket {
 			.replace("\r", "\\r");
 	}
 
-	// 아주 단순한 "key":"value"만 파싱
+	/* "key":"value" 형태만 뽑음 */
 	private static String extractJsonString(String json, String key) {
 		String pattern = "\"" + key + "\"";
 		int i = json.indexOf(pattern);

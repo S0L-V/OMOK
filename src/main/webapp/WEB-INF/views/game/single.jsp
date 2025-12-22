@@ -48,7 +48,6 @@
 	}
 
 	if (playType !== "single") {
-	  // single.jsp에서만 돌린다면 이 체크는 선택
 	  console.warn("playType이 single이 아닙니다:", playType);
 	}
 
@@ -75,7 +74,7 @@
 	
 	function handle(data) {
 		if (data.type === "EMOJI_CHAT") {
-			  // emojiChat.js가 화면 표시 담당
+			  /* emojiChat.js가 화면 표시 담당 */
 			  if (window.onEmojiChat) window.onEmojiChat(data.payload);
 			  return;
 			}
