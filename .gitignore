@@ -1,7 +1,9 @@
 ### Eclipse ###
+.metadata
 .classpath
 .project
 .settings/
+application.properties
 
 ### Build Output ###
 /build/
