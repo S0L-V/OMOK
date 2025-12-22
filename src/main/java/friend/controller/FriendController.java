@@ -8,6 +8,7 @@ import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 
 import com.google.gson.Gson;
 
@@ -86,6 +87,9 @@ public class FriendController extends HttpServlet {
 			case "accept":
 				handleAcceptRequest(req, res, userId);
 				break;
+			case "reject":
+				handleRejectRequest(req, res, userId);
+				break;
 			case "remove":
 				handleRemoveFriend(req, res, userId);
 				break;
@@ -111,6 +115,27 @@ public class FriendController extends HttpServlet {
 	private void handleGetPendingRequests(HttpServletResponse res, String userId) throws IOException {
 		List<FriendDTO> requests = friendService.getPendingRequests(userId);
 		sendSuccess(res, requests);
+	}
+
+	/**
+	 * POST /friend/reject - 친구 요청 거절
+	 */
+	private void handleRejectRequest(HttpServletRequest req, HttpServletResponse res, String userId) throws
+		IOException {
+		FriendAcceptDTO body = gson.fromJson(req.getReader(), FriendAcceptDTO.class);
+
+		if (body == null || body.getRequesterId() == null || body.getRequesterId().isBlank()) {
+			sendError(res, 400, "requesterId가 필요합니다.");
+			return;
+		}
+
+		boolean success = friendService.rejectFriendRequest(body.getRequesterId(), userId);
+
+		if (success) {
+			sendSuccess(res, "친구 요청을 거절했습니다.");
+		} else {
+			sendError(res, 400, "친구 요청 거절에 실패했습니다.");
+		}
 	}
 
 	/**
@@ -198,13 +223,11 @@ public class FriendController extends HttpServlet {
 	 * 세션에서 로그인한 사용자 ID 가져오기
 	 */
 	private String getLoginUserId(HttpServletRequest req) {
-		// HttpSession session = req.getSession(false);
-		// if (session == null) {
-		// 	return null;
-		// }
-		// return (String)session.getAttribute("userId");
-
-		return "user-001";
+		HttpSession session = req.getSession(false);
+		if (session == null) {
+			return null;
+		}
+		return (String)session.getAttribute("loginUserId");
 	}
 
 	/**
