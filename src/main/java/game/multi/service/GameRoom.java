@@ -302,8 +302,27 @@ public class GameRoom {
 		return out;
 	}
     
-    public boolean isEmpty() {
-        return sessionList.isEmpty();
+    /**
+     * 방이 삭제될 때 스케줄러(타이머)를 강제로 종료하여 메모리 누수를 방지함
+     */
+    public void destroy() {
+        // 1. 현재 돌고 있는 타이머 태스크 취소
+        if (turnTask != null) {
+            turnTask.cancel(true);
+        }
+        
+        // 2. 스케줄러 스레드 종료 (메모리 누수 방지)
+        if (scheduler != null && !scheduler.isShutdown()) {
+            scheduler.shutdown();
+            try {
+                // 혹시 안 꺼지면 1초 정도 기다려줌
+                if (!scheduler.awaitTermination(1, TimeUnit.SECONDS)) {
+                    scheduler.shutdownNow();
+                }
+            } catch (InterruptedException e) {
+                scheduler.shutdownNow();
+            }
+        }
     }
     
     
@@ -314,6 +333,10 @@ public class GameRoom {
 	private void nextTurn() {
 		turn = (turn + 1) % 4;
 	}
+	
+    public boolean isEmpty() {
+        return sessionList.isEmpty();
+    }
 
 	private void endGame(List<SendJob> out, String msg) {
 		gameOver = true;

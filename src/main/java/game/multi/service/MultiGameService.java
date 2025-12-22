@@ -61,6 +61,7 @@ public class MultiGameService {
             
             // 방에 사람이 아무도 없으면 방 삭제 (메모리 관리)
             if (room.isEmpty()) {
+            	room.destroy();
                 rooms.remove(roomId);
                 System.out.println("방 삭제됨: " + roomId);
             }
