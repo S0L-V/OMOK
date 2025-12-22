@@ -38,15 +38,15 @@
     drawBoard();
 
     const params = new URLSearchParams(window.location.search);
-	const playType = params.get("playType");  // "single" | "multi"
-	const roomId = params.get("roomId");      // "게임_아이디"
+	const playType = params.get("playType");  // "0" single | "1" multi
+	const roomId = params.get("roomId"); 
 	
 	if(!roomId) {
 		alert("roomId가 없습니다. URL에 roomId를 포함해 주세요.");
 		throw new Error("Missing roomId");
 	}
 	
-	if (playType !== "multi") {
+	if (playType !== "1") {
 		console.warn("playType이 multi가 아닙니다.:", playType);
 	}
 	
@@ -178,10 +178,29 @@
 	
 	// 방 이동 함수
 	function goToRoomView() {
-	    setTimeout(() => {
-	        location.href = "<%= request.getContextPath() %>/room?roomId=" + encodeURIComponent(roomId) + "&playType=" + encodeURIComponent(playType);
-	    }, 3000);
-	}
+        try { ws.close(); } catch(e) {}
+
+        fetch(contextPath + "/room/playersToRoom", {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8" },
+            body: "roomId=" + encodeURIComponent(roomId)
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (!data.ok) throw new Error(data.message || "update failed");
+
+            setTimeout(() => {
+                location.href = contextPath + "/room?roomId=" + encodeURIComponent(roomId) + "&playType=1";
+            }, 3000);
+        })
+        .catch(err => {
+            console.error(err);
+            // 실패해도 일단 방으로 보냄
+            setTimeout(() => {
+                location.href = contextPath + "/room?roomId=" + encodeURIComponent(roomId) + "&playType=1";
+            }, 3000);
+        });
+    }
 	
 	function startTimer(sec, turnColor) {
 	    clearInterval(timer);
@@ -217,8 +236,6 @@
 	    ctx.lineWidth = 1;
 	    ctx.strokeStyle = "#000";
         
-        // 오목판은 선 위에 돌을 두므로, 선을 그릴 때 여백(padding)을 고려하거나 
-        // 0부터 시작하되 클릭 좌표와 매핑을 잘 해야 함.
 	    for (let i = 0; i < 15; i++) {
             // 가로줄
 	        ctx.moveTo(size/2, size*i + size/2);
