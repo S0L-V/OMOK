@@ -53,36 +53,22 @@ public class GameStartController extends HttpServlet {
 				return;
 			}
 
+			System.out.println(hostUserId + " " + loginUserId);
+
 			if (!loginUserId.equals(hostUserId)) {
 				response.sendError(HttpServletResponse.SC_FORBIDDEN, "게임 시작 권한이 없습니다. (host만 가능)");
 				return;
 			}
-
 			int updated = roomPlayerDao.updatePlayersToInGame(roomId);
 
 			System.out.println("[GameStart] roomId=" + roomId + " updatedPlayers=" + updated);
 
-			boolean isValidSingleGame = "0".equals(playType) && updated == 2;
-			boolean isValidMultiGame = "1".equals(playType) && updated == 4;
-			if (isValidSingleGame || isValidMultiGame) {
-				service.broadcastGameStart(roomId, hostUserId, playType);
-			} else {
-				response.sendError(HttpServletResponse.SC_FORBIDDEN, "참여 인원이 유효하지 않습니다.");
-				return;
-			}
+			service.broadcastGameStart(roomId, hostUserId, playType);
 
-			if (isValidSingleGame) {
-				response.sendRedirect(
-					request.getContextPath() + "/game/single?roomId="
-						+ URLEncoder.encode(roomId, StandardCharsets.UTF_8));
-			} else if (isValidMultiGame) {
-				response.sendRedirect(
-					request.getContextPath() + "/game/multi?roomId="
-						+ URLEncoder.encode(roomId, StandardCharsets.UTF_8));
-			} else {
-				response.sendError(HttpServletResponse.SC_FORBIDDEN, "참여 인원이 유효하지 않습니다.");
-				return;
-			}
+			String playTypeId = playType.equals("0") ? "single" : "multi";
+			response.sendRedirect(
+				request.getContextPath() + "/game/" + playTypeId + "?roomId="
+					+ URLEncoder.encode(roomId, StandardCharsets.UTF_8));
 
 		} catch (Exception e) {
 			e.printStackTrace();
