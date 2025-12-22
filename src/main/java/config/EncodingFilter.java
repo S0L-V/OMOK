@@ -43,16 +43,25 @@ public class EncodingFilter implements Filter {
 		String uri = req.getRequestURI();
 		String ctx = req.getContextPath();
 
-		// 정적 리소스 여부 확인 (제외 필요)
+		// 응답 인코딩 설정
+		res.setCharacterEncoding(encoding);
+
+		// 정적 리소스 판별
 		boolean isStaticResource = uri.startsWith(ctx + "/static/")
 			|| uri.matches(".*\\.(css|js|png|jpg|jpeg|gif|svg|ico|woff|woff2|map)$");
 
+		// API 엔드포인트 판별
+		boolean isApiEndpoint = uri.startsWith(ctx + "/record/")
+			|| uri.startsWith(ctx + "/friend/")
+			|| uri.startsWith(ctx + "/api/");
+
+		// Content-Type 설정
 		if (!isStaticResource) {
-			if (req.getCharacterEncoding() == null) {
-				req.setCharacterEncoding(encoding);
+			if (isApiEndpoint) {
+				res.setContentType("application/json; charset=" + encoding);  // JSON
+			} else {
+				res.setContentType("text/html; charset=" + encoding);         // HTML
 			}
-			res.setCharacterEncoding(encoding);
-			res.setContentType("text/html; charset=" + encoding);
 		}
 
 		chain.doFilter(request, response);

@@ -1,4 +1,4 @@
-package room.controller;
+package jwtLogin.controller;
 
 import java.io.IOException;
 
@@ -8,14 +8,14 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-@WebServlet("/lobby/room/create")
-public class CreateRoomFormController extends HttpServlet {
-	private static final long serialVersionUID = 1L;
+@WebServlet("/login2")
+public class LoginPageServlet extends HttpServlet {
 
+	@Override
 	protected void doGet(HttpServletRequest request, HttpServletResponse response)
 		throws ServletException, IOException {
-		request.getRequestDispatcher("/WEB-INF/views/room/create.jsp")
+
+		request.getRequestDispatcher("/WEB-INF/views/auth/login2.jsp")
 			.forward(request, response);
 	}
-
 }

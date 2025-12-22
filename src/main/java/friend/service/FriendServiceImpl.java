@@ -1,5 +1,7 @@
 package friend.service;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
@@ -7,6 +9,7 @@ import java.util.List;
 import friend.dao.FriendDAO;
 import friend.dao.FriendDAOImpl;
 import friend.dto.FriendDTO;
+import util.DB;
 
 public class FriendServiceImpl implements FriendService {
 
@@ -34,6 +37,26 @@ public class FriendServiceImpl implements FriendService {
 			int result = friendDAO.createRequest(requesterId, receiverId);
 			return result > 0;
 		} catch (SQLException e) {
+			e.printStackTrace();
+			return false;
+		}
+	}
+
+	@Override
+	public boolean rejectFriendRequest(String requesterId, String targetId) {
+		// friend_request가 아니라 friend 테이블입니다!
+		String sql = "DELETE FROM friend WHERE user_id = ? AND friend_id = ? AND status = 'PENDING'";
+
+		try (Connection conn = DB.getConnection();
+			 PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+			pstmt.setString(1, requesterId);
+			pstmt.setString(2, targetId);
+
+			int result = pstmt.executeUpdate();
+			return result > 0;
+
+		} catch (Exception e) {
 			e.printStackTrace();
 			return false;
 		}
