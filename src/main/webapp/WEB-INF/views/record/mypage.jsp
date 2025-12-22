@@ -331,8 +331,16 @@
         <div class="card">
             <div class="profile-header">
                 <div class="profile-avatar">👤</div>
-                <div>
-                    <h2>${userInfo.nickname}</h2>
+                <div style="flex: 1;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <h2 id="nicknameDisplay" style="margin: 0;">${userInfo.nickname}</h2>
+                        <button id="editNicknameBtn" onclick="startEditNickname()" style="background: none; border: none; cursor: pointer; font-size: 18px; padding: 5px;">✏️</button>
+                    </div>
+                    <div id="nicknameEditBox" style="display: none; margin-top: 10px;">
+                        <input type="text" id="newNicknameInput" placeholder="새 닉네임 입력" maxlength="20" style="padding: 8px; border: 1px solid #ddd; border-radius: 4px; width: 200px;">
+                        <button onclick="saveNickname()" style="padding: 8px 15px; background: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer; margin-left: 5px;">확인</button>
+                        <button onclick="cancelEditNickname()" style="padding: 8px 15px; background: #999; color: white; border: none; border-radius: 4px; cursor: pointer; margin-left: 5px;">취소</button>
+                    </div>
                 </div>
             </div>
 
@@ -740,6 +748,64 @@
                 location.reload(); // 페이지 새로고침
             } else {
                 alert(json.message || "친구 삭제 실패");
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            alert("서버 오류 발생");
+        });
+    }
+
+    // ============================================
+    // 닉네임 수정
+    // ============================================
+    function startEditNickname() {
+        document.getElementById("nicknameEditBox").style.display = "block";
+        document.getElementById("editNicknameBtn").style.display = "none";
+        document.getElementById("newNicknameInput").value = "${userInfo.nickname}";
+        document.getElementById("newNicknameInput").focus();
+    }
+
+    function cancelEditNickname() {
+        document.getElementById("nicknameEditBox").style.display = "none";
+        document.getElementById("editNicknameBtn").style.display = "inline-block";
+    }
+
+    function saveNickname() {
+        const newNickname = document.getElementById("newNicknameInput").value.trim();
+
+        if (!newNickname) {
+            alert("닉네임을 입력해주세요.");
+            return;
+        }
+
+        if (newNickname.length < 2 || newNickname.length > 20) {
+            alert("닉네임은 2~20자로 입력해주세요.");
+            return;
+        }
+
+        if (newNickname === "${userInfo.nickname}") {
+            alert("현재 닉네임과 동일합니다.");
+            cancelEditNickname();
+            return;
+        }
+
+        if (!confirm("닉네임을 '" + newNickname + "'(으)로 변경하시겠습니까?")) {
+            return;
+        }
+
+        fetch(CTX + '/user/updateNickname', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({nickname: newNickname})
+        })
+        .then(res => res.json())
+        .then(json => {
+            if (json.success) {
+                alert("닉네임이 변경되었습니다!");
+                location.reload();
+            } else {
+                alert(json.message || "닉네임 변경 실패");
             }
         })
         .catch(err => {
