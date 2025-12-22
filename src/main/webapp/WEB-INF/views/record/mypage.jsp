@@ -6,6 +6,7 @@
 <html>
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>마이페이지</title>
     <style>
         body {
@@ -320,6 +321,178 @@
 
         .friend-item:hover {
             background: #f9f9f9;
+        }
+
+        /* 반응형 디자인 */
+        @media (max-width: 1024px) {
+            .mypage-wrapper {
+                grid-template-columns: 1fr;
+                max-width: 100%;
+                padding: 10px;
+                margin: 20px auto;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .mypage-wrapper {
+                padding: 10px;
+                margin: 10px auto;
+                gap: 15px;
+            }
+
+            .card {
+                padding: 15px;
+                margin-bottom: 15px;
+            }
+
+            .profile-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 15px;
+            }
+
+            .profile-avatar {
+                width: 60px;
+                height: 60px;
+                font-size: 25px;
+            }
+
+            h2 {
+                font-size: 20px;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 8px;
+            }
+
+            .stat-item {
+                padding: 10px;
+            }
+
+            .stat-val {
+                font-size: 16px;
+            }
+
+            .stat-label {
+                font-size: 11px;
+            }
+
+            table {
+                font-size: 12px;
+            }
+
+            th, td {
+                padding: 8px 5px;
+                font-size: 12px;
+            }
+
+            .section-title {
+                font-size: 16px;
+            }
+
+            .search-box {
+                flex-direction: column;
+            }
+
+            .search-box input {
+                width: 100%;
+            }
+
+            .search-box button {
+                width: 100%;
+            }
+
+            .friend-item {
+                padding: 8px;
+            }
+
+            .f-avatar {
+                width: 30px;
+                height: 30px;
+                font-size: 12px;
+            }
+
+            .f-name {
+                font-size: 13px;
+            }
+
+            .f-status {
+                font-size: 11px;
+            }
+
+            .btn-accept, .btn-reject, .btn-request {
+                padding: 4px 8px;
+                font-size: 11px;
+            }
+
+            /* 닉네임 수정 UI 반응형 */
+            #newNicknameInput {
+                width: 150px !important;
+                font-size: 14px;
+            }
+
+            #nicknameEditBox button {
+                padding: 6px 10px !important;
+                font-size: 12px !important;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .profile-header {
+                text-align: center;
+                align-items: center;
+            }
+
+            h2 {
+                font-size: 18px;
+            }
+
+            #newNicknameInput {
+                width: 120px !important;
+                font-size: 13px;
+                padding: 6px !important;
+            }
+
+            #nicknameEditBox button {
+                padding: 5px 8px !important;
+                font-size: 11px !important;
+                margin-left: 3px !important;
+            }
+
+            #editNicknameBtn {
+                font-size: 16px !important;
+            }
+
+            table {
+                font-size: 11px;
+            }
+
+            th, td {
+                padding: 6px 3px;
+                font-size: 11px;
+            }
+
+            .friend-list {
+                max-height: 300px;
+            }
+
+            .context-menu {
+                min-width: 100px;
+            }
+
+            .context-menu-item {
+                padding: 6px 12px;
+                font-size: 13px;
+            }
         }
     </style>
 </head>
