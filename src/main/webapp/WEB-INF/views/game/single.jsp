@@ -20,6 +20,7 @@
 	<button onclick="giveUp()" style="margin-top:10px; padding: 5px 10px;">기권하기</button>
 	<script>
 	const statusDiv = document.getElementById("status");
+	const timerDiv = document.getElementById("timer");
 	const passDiv = document.getElementById("pass");
 	const canvas = document.getElementById("board");
 	const ctx = canvas.getContext("2d");
@@ -130,10 +131,31 @@
 		}
 	}
 	
+	/* 방으로 이동 */
 	function goToRoomView() {
-	    setTimeout(() => {
-	        location.href = "<%= request.getContextPath() %>/room?roomId=" + encodeURIComponent(roomId) + "&playType=" + encodeURIComponent(playType);
-	    }, 3000);
+	    // (선택) 웹소켓 닫아주면 더 깔끔
+	    try { ws.close(); } catch(e) {}
+
+	    fetch(contextPath + "/room/playersToRoom", {
+	        method: "POST",
+	        headers: { "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8" },
+	        body: "roomId=" + encodeURIComponent(roomId)
+	    })
+	    .then(res => res.json())
+	    .then(data => {
+	        if (!data.ok) throw new Error(data.message || "update failed");
+
+	        setTimeout(() => {
+	            location.href = contextPath + "/room?roomId=" + encodeURIComponent(roomId) + "&playType=0";
+	        }, 3000);
+	    })
+	    .catch(err => {
+	        console.error(err);
+	        // 실패해도 일단 방으로 보내고 싶으면 이렇게:
+	        setTimeout(() => {
+	            location.href = contextPath + "/room?roomId=" + encodeURIComponent(roomId) + "&playType=0";
+	        }, 3000);
+	    });
 	}
 	
 	/* 보드 클릭(돌 두기) */
@@ -164,8 +186,7 @@
 	
 	/* 타이머 출력 */
 	function updateTimerText(color, sec) {
-	    const timerDiv = document.getElementById("timer");
-	
+		
 	    let colorName = color === 1 ? "흑돌" : "백돌";
 	    timerDiv.innerText = colorName + " 차례 | 남은 시간: " + sec + "초";
 	
