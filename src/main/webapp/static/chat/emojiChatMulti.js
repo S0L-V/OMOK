@@ -30,10 +30,11 @@
 
   /* 
   서버 → 이모지 수신
-  payload = { fromSlot, emoji } 
+  payload = { slot, emoji } 
   */
   window.onEmojiChat = (payload) => {
     if (!payload) return;
+    if (payload.slot === undefined || !payload.emoji) return;
 
     const slot = payload.slot;
     const key = payload.emoji;
