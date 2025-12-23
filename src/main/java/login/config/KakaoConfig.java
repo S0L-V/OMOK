@@ -32,6 +32,10 @@ public class KakaoConfig {
 	}
 
 	public static String redirectUri() {
-		return props.getProperty("KAKAO.REDIRECT_URI");
+	    String baseUrl = props.getProperty("APP.BASE_URL");
+	    if (baseUrl == null || baseUrl.isBlank()) {
+	        throw new IllegalStateException("APP.BASE_URL 값이 없습니다.");
+	    }
+	    return baseUrl + "/kakaoCallback";
 	}
 }
