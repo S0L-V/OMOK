@@ -228,5 +228,4 @@
 
   <%@ include file="/WEB-INF/views/chat/gameEmoji.jsp" %>
 </body>
-</body>
 </html>
