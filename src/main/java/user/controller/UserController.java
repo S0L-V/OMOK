@@ -69,6 +69,35 @@ public class UserController extends HttpServlet {
 		}
 	}
 
+	@Override
+	protected void doPost(HttpServletRequest req, HttpServletResponse res) throws ServletException, IOException {
+		req.setCharacterEncoding("UTF-8");
+		res.setContentType("application/json; charset=UTF-8");
+
+		String pathInfo = req.getPathInfo();
+
+		if (pathInfo == null || pathInfo.equals("/")) {
+			sendError(res, 400, "잘못된 요청입니다.");
+			return;
+		}
+
+		String[] paths = pathInfo.split("/");
+		if (paths.length < 2) {
+			sendError(res, 400, "잘못된 요청입니다.");
+			return;
+		}
+
+		String action = paths[1];
+
+		switch (action) {
+			case "updateNickname":
+				handleUpdateNickname(req, res);
+				break;
+			default:
+				sendError(res, 404, "존재하지 않는 API입니다.");
+		}
+	}
+
 	/**
 	 * GET /user/search?nickname={nickname} - 닉네임으로 사용자 검색
 	 */
@@ -155,6 +184,60 @@ public class UserController extends HttpServlet {
 	}
 
 	/**
+	 * POST /user/updateNickname - 닉네임 수정
+	 */
+	private void handleUpdateNickname(HttpServletRequest req, HttpServletResponse res) throws IOException {
+		HttpSession session = req.getSession(false);
+		if (session == null || session.getAttribute("loginUserId") == null) {
+			sendError(res, 401, "로그인이 필요합니다.");
+			return;
+		}
+
+		String userId = (String) session.getAttribute("loginUserId");
+
+		// JSON 파싱
+		try {
+			String body = req.getReader().lines().reduce("", (acc, line) -> acc + line);
+			UpdateNicknameRequest request = gson.fromJson(body, UpdateNicknameRequest.class);
+
+			String newNickname = request.nickname;
+
+			// 유효성 검사
+			if (newNickname == null || newNickname.trim().isEmpty()) {
+				sendError(res, 400, "닉네임을 입력해주세요.");
+				return;
+			}
+
+			newNickname = newNickname.trim();
+
+			if (newNickname.length() < 2 || newNickname.length() > 20) {
+				sendError(res, 400, "닉네임은 2~20자로 입력해주세요.");
+				return;
+			}
+
+			// 닉네임 중복 체크
+			if (isNicknameExists(newNickname, userId)) {
+				sendError(res, 409, "이미 사용 중인 닉네임입니다.");
+				return;
+			}
+
+			// 닉네임 업데이트
+			updateNickname(userId, newNickname);
+
+			// 세션 업데이트
+			session.setAttribute("loginNickname", newNickname);
+
+			System.out.println("[Controller] 닉네임 수정 완료: " + userId + " -> " + newNickname);
+			sendSuccess(res, newNickname);
+
+		} catch (Exception e) {
+			System.err.println("[Controller] 닉네임 수정 실패: " + e.getMessage());
+			e.printStackTrace();
+			sendError(res, 500, "서버 오류가 발생했습니다.");
+		}
+	}
+
+	/**
 	 * 닉네임으로 사용지 검색 (DAO 로직)
 	 */
 	private UserInfoVo searchUserByNickname(String nickname) throws Exception {
@@ -226,6 +309,55 @@ public class UserController extends HttpServlet {
 	}
 
 	/**
+	 * 닉네임 중복 체크 (자신 제외)
+	 */
+	private boolean isNicknameExists(String nickname, String excludeUserId) throws Exception {
+		String query = """
+				SELECT COUNT(*) FROM user_info
+				WHERE nickname = ? AND user_id != ?
+			""";
+
+		try (Connection conn = DB.getConnection();
+			 PreparedStatement pstmt = conn.prepareStatement(query)) {
+
+			pstmt.setString(1, nickname);
+			pstmt.setString(2, excludeUserId);
+
+			try (ResultSet rs = pstmt.executeQuery()) {
+				if (rs.next()) {
+					return rs.getInt(1) > 0;
+				}
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * 닉네임 업데이트
+	 */
+	private void updateNickname(String userId, String newNickname) throws Exception {
+		String query = """
+				UPDATE user_info
+				SET nickname = ?
+				WHERE user_id = ?
+			""";
+
+		try (Connection conn = DB.getConnection();
+			 PreparedStatement pstmt = conn.prepareStatement(query)) {
+
+			pstmt.setString(1, newNickname);
+			pstmt.setString(2, userId);
+
+			int updated = pstmt.executeUpdate();
+
+			if (updated == 0) {
+				throw new SQLException("닉네임 업데이트 실패: 사용자를 찾을 수 없습니다.");
+			}
+		}
+	}
+
+	/**
 	 * ResultSet -> UserInfoVo 매핑
 	 */
 	private UserInfoVo mapRow(ResultSet rs) throws SQLException {
@@ -274,5 +406,12 @@ public class UserController extends HttpServlet {
 			this.data = data;
 			this.message = message;
 		}
+	}
+
+	/**
+	 * 닉네임 수정 요청
+	 */
+	private static class UpdateNicknameRequest {
+		String nickname;
 	}
 }

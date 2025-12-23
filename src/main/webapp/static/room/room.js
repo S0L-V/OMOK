@@ -224,6 +224,32 @@
     } catch (_) {}
     location.href = "/lobby";
   });
+  
+  const startForm = document.querySelector("#start-form");
+  startForm?.addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    const formData = new FormData(startForm);
+    const params = new URLSearchParams(formData);
+
+    try {
+      const response = await fetch(startForm.action, {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8" },
+        body: params,
+      });
+
+      if (!response.ok) {
+        const text = await response.text();
+        alert(`게임 시작 실패: ${text}`);
+      }
+      // 성공 시: 서버가 WS로 GAME_START를 보내면
+      // room.js의 GAME_START 핸들러가 페이지 이동 처리함 :contentReference[oaicite:2]{index=2}
+    } catch (err) {
+      console.error("게임 시작 요청 실패:", err);
+      alert("게임 시작 요청 중 오류가 발생했습니다.");
+    }
+  });
 
   /* IME 조합 상태 추적 (한글 뒷글자 중복 방지) */
   let isComposing = false;

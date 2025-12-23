@@ -80,7 +80,7 @@ public class UserDAOImpl implements UserDAO {
 
 		String sqlInfo = """
 			INSERT INTO user_info (user_id, nickname, total_win, total_lose, total_draw, current_streak, max_win_streak, win_rate, coin)
-			VALUES (?, ?, 0, 0, 0, 0, 0, 0, 0)
+			VALUES (?, ?, 0, 0, 0, 0, 0, 0, 10000)
 			""";
 		try (Connection conn = DB.getConnection()) {
 			conn.setAutoCommit(false);

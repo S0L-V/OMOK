@@ -6,6 +6,7 @@
 <html>
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>마이페이지</title>
     <style>
         body {
@@ -279,6 +280,220 @@
             color: #888;
             text-align: center;
         }
+
+        /* 컨텍스트 메뉴 (우클릭 메뉴) */
+        .context-menu {
+            position: fixed;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+            padding: 5px 0;
+            min-width: 120px;
+            z-index: 1000;
+            display: none;
+        }
+
+        .context-menu-item {
+            padding: 8px 15px;
+            cursor: pointer;
+            font-size: 14px;
+            color: #333;
+        }
+
+        .context-menu-item:hover {
+            background: #f5f5f5;
+        }
+
+        .context-menu-item.danger {
+            color: #f44336;
+        }
+
+        .context-menu-item.danger:hover {
+            background: #ffebee;
+        }
+
+        /* 친구 목록 아이템에 호버 효과 */
+        .friend-item {
+            cursor: pointer;
+            position: relative;
+        }
+
+        .friend-item:hover {
+            background: #f9f9f9;
+        }
+
+        /* 반응형 디자인 */
+        @media (max-width: 1024px) {
+            .mypage-wrapper {
+                grid-template-columns: 1fr;
+                max-width: 100%;
+                padding: 10px;
+                margin: 20px auto;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .mypage-wrapper {
+                padding: 10px;
+                margin: 10px auto;
+                gap: 15px;
+            }
+
+            .card {
+                padding: 15px;
+                margin-bottom: 15px;
+            }
+
+            .profile-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 15px;
+            }
+
+            .profile-avatar {
+                width: 60px;
+                height: 60px;
+                font-size: 25px;
+            }
+
+            h2 {
+                font-size: 20px;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 8px;
+            }
+
+            .stat-item {
+                padding: 10px;
+            }
+
+            .stat-val {
+                font-size: 16px;
+            }
+
+            .stat-label {
+                font-size: 11px;
+            }
+
+            table {
+                font-size: 12px;
+            }
+
+            th, td {
+                padding: 8px 5px;
+                font-size: 12px;
+            }
+
+            .section-title {
+                font-size: 16px;
+            }
+
+            .search-box {
+                flex-direction: column;
+            }
+
+            .search-box input {
+                width: 100%;
+            }
+
+            .search-box button {
+                width: 100%;
+            }
+
+            .friend-item {
+                padding: 8px;
+            }
+
+            .f-avatar {
+                width: 30px;
+                height: 30px;
+                font-size: 12px;
+            }
+
+            .f-name {
+                font-size: 13px;
+            }
+
+            .f-status {
+                font-size: 11px;
+            }
+
+            .btn-accept, .btn-reject, .btn-request {
+                padding: 4px 8px;
+                font-size: 11px;
+            }
+
+            /* 닉네임 수정 UI 반응형 */
+            #newNicknameInput {
+                width: 150px !important;
+                font-size: 14px;
+            }
+
+            #nicknameEditBox button {
+                padding: 6px 10px !important;
+                font-size: 12px !important;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .profile-header {
+                text-align: center;
+                align-items: center;
+            }
+
+            h2 {
+                font-size: 18px;
+            }
+
+            #newNicknameInput {
+                width: 120px !important;
+                font-size: 13px;
+                padding: 6px !important;
+            }
+
+            #nicknameEditBox button {
+                padding: 5px 8px !important;
+                font-size: 11px !important;
+                margin-left: 3px !important;
+            }
+
+            #editNicknameBtn {
+                font-size: 16px !important;
+            }
+
+            table {
+                font-size: 11px;
+            }
+
+            th, td {
+                padding: 6px 3px;
+                font-size: 11px;
+            }
+
+            .friend-list {
+                max-height: 300px;
+            }
+
+            .context-menu {
+                min-width: 100px;
+            }
+
+            .context-menu-item {
+                padding: 6px 12px;
+                font-size: 13px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -289,9 +504,16 @@
         <div class="card">
             <div class="profile-header">
                 <div class="profile-avatar">👤</div>
-                <div>
-                    <h2>${userInfo.nickname}</h2>
-                    <span style="color: #666; font-size: 14px;">ID: ${userInfo.userId}</span>
+                <div style="flex: 1;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <h2 id="nicknameDisplay" style="margin: 0;">${userInfo.nickname}</h2>
+                        <button id="editNicknameBtn" onclick="startEditNickname()" style="background: none; border: none; cursor: pointer; font-size: 18px; padding: 5px;">✏️</button>
+                    </div>
+                    <div id="nicknameEditBox" style="display: none; margin-top: 10px;">
+                        <input type="text" id="newNicknameInput" placeholder="새 닉네임 입력" maxlength="20" style="padding: 8px; border: 1px solid #ddd; border-radius: 4px; width: 200px;">
+                        <button onclick="saveNickname()" style="padding: 8px 15px; background: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer; margin-left: 5px;">확인</button>
+                        <button onclick="cancelEditNickname()" style="padding: 8px 15px; background: #999; color: white; border: none; border-radius: 4px; cursor: pointer; margin-left: 5px;">취소</button>
+                    </div>
                 </div>
             </div>
 
@@ -405,7 +627,10 @@
                     </c:when>
                     <c:otherwise>
                         <c:forEach var="friend" items="${myFriends}">
-                            <li class="friend-item">
+                            <li class="friend-item"
+                                data-friend-user-id="${friend.userId}"
+                                data-friend-id="${friend.friendId}"
+                                data-friend-nickname="${friend.nickname}">
                                 <div class="f-avatar">${friend.nickname.charAt(0)}</div>
                                 <div class="f-info">
                                     <div class="f-name">${friend.nickname}</div>
@@ -419,6 +644,13 @@
                 </c:choose>
             </ul>
         </div>
+    </div>
+</div>
+
+<!-- 컨텍스트 메뉴 (우클릭 메뉴) -->
+<div id="friendContextMenu" class="context-menu">
+    <div class="context-menu-item danger" onclick="removeFriendFromMenu()">
+        🗑️ 친구 삭제
     </div>
 </div>
 
@@ -629,6 +861,130 @@
                 console.error(err);
                 alert("서버 오류 발생");
             });
+    }
+
+    // ============================================
+    // 친구 삭제 (우클릭 메뉴)
+    // ============================================
+    const contextMenu = document.getElementById("friendContextMenu");
+    let selectedFriendData = null;
+
+    // 모든 친구 아이템에 우클릭 이벤트 추가
+    document.querySelectorAll(".friend-item").forEach(item => {
+        item.addEventListener("contextmenu", function(e) {
+            e.preventDefault(); // 기본 우클릭 메뉴 방지
+
+            // 선택된 친구 정보 저장
+            selectedFriendData = {
+                userId: this.dataset.friendUserId,
+                friendId: this.dataset.friendId,
+                nickname: this.dataset.friendNickname
+            };
+
+            // 컨텍스트 메뉴 위치 설정
+            contextMenu.style.left = e.pageX + "px";
+            contextMenu.style.top = e.pageY + "px";
+            contextMenu.style.display = "block";
+        });
+    });
+
+    // 메뉴 외부 클릭 시 숨기기
+    document.addEventListener("click", function() {
+        contextMenu.style.display = "none";
+    });
+
+    // 친구 삭제 실행
+    function removeFriendFromMenu() {
+        if (!selectedFriendData) return;
+
+        const nickname = selectedFriendData.nickname;
+
+        if (!confirm(nickname + "님을 친구 목록에서 삭제하시겠습니까?")) {
+            return;
+        }
+
+        // 친구 ID 결정: userId와 friendId 중 내가 아닌 것
+        const myUserId = "${userInfo.userId}";
+        const targetFriendId = (selectedFriendData.userId === myUserId)
+            ? selectedFriendData.friendId
+            : selectedFriendData.userId;
+
+        fetch(CTX + '/friend/remove', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({friendId: targetFriendId})
+        })
+        .then(res => res.json())
+        .then(json => {
+            if (json.success) {
+                alert("친구를 삭제했습니다.");
+                location.reload(); // 페이지 새로고침
+            } else {
+                alert(json.message || "친구 삭제 실패");
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            alert("서버 오류 발생");
+        });
+    }
+
+    // ============================================
+    // 닉네임 수정
+    // ============================================
+    function startEditNickname() {
+        document.getElementById("nicknameEditBox").style.display = "block";
+        document.getElementById("editNicknameBtn").style.display = "none";
+        document.getElementById("newNicknameInput").value = "${userInfo.nickname}";
+        document.getElementById("newNicknameInput").focus();
+    }
+
+    function cancelEditNickname() {
+        document.getElementById("nicknameEditBox").style.display = "none";
+        document.getElementById("editNicknameBtn").style.display = "inline-block";
+    }
+
+    function saveNickname() {
+        const newNickname = document.getElementById("newNicknameInput").value.trim();
+
+        if (!newNickname) {
+            alert("닉네임을 입력해주세요.");
+            return;
+        }
+
+        if (newNickname.length < 2 || newNickname.length > 20) {
+            alert("닉네임은 2~20자로 입력해주세요.");
+            return;
+        }
+
+        if (newNickname === "${userInfo.nickname}") {
+            alert("현재 닉네임과 동일합니다.");
+            cancelEditNickname();
+            return;
+        }
+
+        if (!confirm("닉네임을 '" + newNickname + "'(으)로 변경하시겠습니까?")) {
+            return;
+        }
+
+        fetch(CTX + '/user/updateNickname', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({nickname: newNickname})
+        })
+        .then(res => res.json())
+        .then(json => {
+            if (json.success) {
+                alert("닉네임이 변경되었습니다!");
+                location.reload();
+            } else {
+                alert(json.message || "닉네임 변경 실패");
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            alert("서버 오류 발생");
+        });
     }
 </script>
 
