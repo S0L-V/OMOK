@@ -26,13 +26,11 @@ import game.multi.service.MultiGameService.SendJob;
 public class MultiWebSocket {
 
 	private static final MultiGameService service = new MultiGameService();
-
 	private static final MultiPlayerDAO multiPlayerDao = new MultiPlayerDAOImpl();
 
-	/* 
+	/*
 	 * room 단위 세션/유저/닉/슬롯 캐시
-	 * - 이모지 브로드캐스트를 해당 room에만 하기 위함
-	 * - GAME_MULTI_START 메시지를 dispatch에서 감지해 slot을 캐싱함
+	 * - 이모지/닉네임을 해당 room에만 브로드캐스트하기 위함
 	 */
 	private static final Map<String, String> sessionRoomMap = new ConcurrentHashMap<>(); // sessionId -> roomId
 	private static final Map<String, String> sessionUserMap = new ConcurrentHashMap<>(); // sessionId -> userId
@@ -46,30 +44,29 @@ public class MultiWebSocket {
 	@OnOpen
 	public void onOpen(Session session, EndpointConfig config) {
 		try {
-			// HttpSession에서 userId 가져오기
+			/* HttpSession에서 userId 가져오기 */
 			HttpSession httpSession = (HttpSession)config.getUserProperties().get(HttpSession.class.getName());
 			String userId = null;
 			if (httpSession != null) {
-				userId = (String)httpSession.getAttribute("loginUserId");
+				userId = (String)httpSession.getAttribute("loginUserId"); // // 개인전이랑 동일 키
 			}
 
-			// URL 쿼리 스트링에서 roomId 파싱
+			/* URL 쿼리 스트링에서 roomId 파싱 */
 			String query = session.getRequestURI().getQuery();
 			String roomId = getParameterValue(query, "roomId");
-
 			if (roomId == null || roomId.trim().isEmpty()) {
-				roomId = "default"; // 방 ID가 없을 때
+				roomId = "default";
 			}
 
-			// DB로 방 멤버 검증
+			/* DB로 방 멤버 검증 */
 			if (!multiPlayerDao.isMember(roomId, userId)) {
 				session.close();
 				return;
 			}
 
-			/* 
+			/*
 			 * room/session 캐시 등록
-			 * SingleWebSocket과 동일 -> loginNickname 사용
+			 * - SingleWebSocket과 동일 -> loginNickname 사용
 			 */
 			sessionRoomMap.put(session.getId(), roomId);
 			if (userId != null)
@@ -77,17 +74,16 @@ public class MultiWebSocket {
 
 			String nickname = null;
 			if (httpSession != null) {
-				nickname = (String)httpSession.getAttribute("loginNickname");
+				nickname = (String)httpSession.getAttribute("loginNickname"); // // 개인전과 동일
 			}
 			if (nickname == null || nickname.isBlank()) {
 				nickname = (userId != null ? userId : "unknown");
 			}
 			sessionNickMap.put(session.getId(), nickname);
 
-			roomSessions.computeIfAbsent(roomId, k -> new ConcurrentHashMap<>())
-				.put(session.getId(), session);
+			roomSessions.computeIfAbsent(roomId, k -> new ConcurrentHashMap<>()).put(session.getId(), session);
 
-			// Service에 roomId와 userId 함께 전달
+			/* Service에 roomId와 userId 함께 전달 */
 			List<SendJob> jobs = service.handleOpen(session, roomId, userId);
 			dispatch(session, jobs);
 
@@ -96,7 +92,6 @@ public class MultiWebSocket {
 		}
 	}
 
-	// 쿼리 스트링 파싱 헬퍼 메서드
 	private String getParameterValue(String query, String name) {
 		if (query == null)
 			return null;
@@ -112,10 +107,10 @@ public class MultiWebSocket {
 	@OnMessage
 	public void onMessage(String msg, Session session) {
 		try {
-			/* 
-			 * 이모지 채팅: "EMOJI_CHAT:smile" 텍스트 프로토콜
+			/*
+			 * 이모지 채팅: EMOJI_CHAT:key 텍스트 프로토콜
 			 * - 같은 방에 브로드캐스트
-			 * - SingleWebSocket과 동일한 JSON 포맷(type/payload) + slot 추가
+			 * - JSON(type/payload) + slot 추가
 			 */
 			if (msg != null && msg.startsWith("EMOJI_CHAT:")) {
 				String emojiKey = msg.substring("EMOJI_CHAT:".length()).trim();
@@ -151,7 +146,7 @@ public class MultiWebSocket {
 
 				String json = gson.toJson(root);
 
-				// room 내 세션에게만 전송
+				/* room 내 세션에게만 전송 */
 				Map<String, Session> targets = roomSessions.get(roomId);
 				if (targets != null) {
 					for (Session s : targets.values()) {
@@ -206,27 +201,25 @@ public class MultiWebSocket {
 	}
 
 	private void dispatch(Session fallback, List<SendJob> jobs) {
-		// 전체에게 보내야 할 경우를 대비해 현재 열려있는 모든 세션을 가져옴
-		// Service가 target=null을 주면 모두에게 보냄
-
 		for (SendJob job : jobs) {
 			try {
-				/*
-				 * GAME_MULTI_START를 감지해서 slot 캐싱
-				 * GameRoom이 보내는 {"type":"GAME_MULTI_START","slot":i,...}를 여기서 읽어둠
-				 */
 				if (job.target() != null) {
-					cacheSlotIfStart(job.target(), job.text());
-				}
-				// ==================================================
+					/* GAME_MULTI_START를 감지해서 slot 캐싱 + 닉네임 브로드캐스트 */
+					Integer slot = cacheSlotIfStart(job.target(), job.text());
+					if (slot != null) {
+						/* 현재 방에 캐시된 유저들 닉네임 전부 보내기 */
+						sendAllKnownUsersTo(job.target());
 
-				// 1. 전체 전송 (Broadcast)
+						/* 방 전체에 이번 target의 slot/nick 알려주기 */
+						broadcastMultiUserForTarget(job.target(), slot);
+					}
+				}
+
+				/* 1. 전체 전송 (Broadcast) */
 				if (job.target() == null) {
-					// 타겟이 없으면(null) => 브로드캐스트 (전체 전송)
 					for (Session s : fallback.getOpenSessions()) {
 						if (s.isOpen()) {
 							try {
-								// 충돌 방지용 동기화 처리
 								synchronized (s) {
 									s.getBasicRemote().sendText(job.text());
 								}
@@ -234,7 +227,7 @@ public class MultiWebSocket {
 						}
 					}
 				}
-				// 2. 개별 전송 (Unicast)
+				/* 2. 개별 전송 (Unicast) */
 				else {
 					if (job.target().isOpen()) {
 						try {
@@ -248,26 +241,114 @@ public class MultiWebSocket {
 		}
 	}
 
-	/* GAME_MULTI_START 메시지에서 slot을 캐싱 */
-	private void cacheSlotIfStart(Session target, String text) {
+	/*
+	 * GAME_MULTI_START 메시지에서 slot을 캐싱
+	 * - slot을 캐싱했으면 slot 값을 반환
+	 */
+	private Integer cacheSlotIfStart(Session target, String text) {
 		try {
 			if (text == null)
-				return;
-			// 파싱 최소화
+				return null;
 			if (!text.contains("\"type\"") || !text.contains("GAME_MULTI_START"))
-				return;
+				return null;
 
 			JsonObject obj = gson.fromJson(text, JsonObject.class);
 			if (obj == null || !obj.has("type"))
-				return;
+				return null;
 
 			String type = obj.get("type").getAsString();
 			if (!"GAME_MULTI_START".equals(type))
-				return;
+				return null;
 
 			if (obj.has("slot")) {
 				int slot = obj.get("slot").getAsInt();
 				sessionSlotMap.put(target.getId(), slot);
+				return slot;
+			}
+		} catch (Exception ignore) {}
+		return null;
+	}
+
+	/* 
+	 * (추가) MULTI_USER 메시지 생성
+	 * payload = { slot, userId, nickname }
+	 */
+	private String buildMultiUserJson(int slot, String userId, String nickname) {
+		JsonObject root = new JsonObject();
+		root.addProperty("type", "MULTI_USER");
+
+		JsonObject payload = new JsonObject();
+		payload.addProperty("slot", slot);
+		if (userId != null)
+			payload.addProperty("userId", userId);
+		payload.addProperty("nickname",
+			(nickname == null || nickname.isBlank()) ? (userId != null ? userId : "unknown") : nickname);
+
+		root.add("payload", payload);
+		return gson.toJson(root);
+	}
+
+	/*
+	 * 특정 세션(target)에게 현재 room의 캐시된 유저들을 전부 보내기
+	 * - 늦게 들어온 사람도 기존 3명의 닉네임을 카드에 채울 수 있게 함
+	 */
+	private void sendAllKnownUsersTo(Session target) {
+		try {
+			String roomId = sessionRoomMap.get(target.getId());
+			if (roomId == null)
+				return;
+
+			Map<String, Session> targets = roomSessions.get(roomId);
+			if (targets == null)
+				return;
+
+			for (Session s : targets.values()) {
+				if (s == null)
+					continue;
+
+				Integer slot = sessionSlotMap.get(s.getId());
+				if (slot == null)
+					continue; // // slot 확정된 사람만
+
+				String uid = sessionUserMap.get(s.getId());
+				String nick = sessionNickMap.get(s.getId());
+
+				String json = buildMultiUserJson(slot, uid, nick);
+
+				if (target.isOpen()) {
+					synchronized (target) {
+						target.getBasicRemote().sendText(json);
+					}
+				}
+			}
+		} catch (Exception ignore) {}
+	}
+
+	/*
+	 * 방 전체에게 "target의 slot/nick"을 브로드캐스트
+	 */
+	private void broadcastMultiUserForTarget(Session target, int slot) {
+		try {
+			String roomId = sessionRoomMap.get(target.getId());
+			if (roomId == null)
+				return;
+
+			String uid = sessionUserMap.get(target.getId());
+			String nick = sessionNickMap.get(target.getId());
+			String json = buildMultiUserJson(slot, uid, nick);
+
+			Map<String, Session> targets = roomSessions.get(roomId);
+			if (targets == null)
+				return;
+
+			for (Session s : targets.values()) {
+				if (s != null && s.isOpen()) {
+					try {
+						synchronized (s) {
+							s.getBasicRemote().sendText(json);
+						}
+					} catch (Exception ignore) {}
+				}
 			}
 		} catch (Exception ignore) {}
 	}
