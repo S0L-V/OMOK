@@ -23,7 +23,7 @@
 </style>
 
 <!-- 절대경로 로드 -->
-<link rel="stylesheet" href="/chat/emojiChat.css" />
+<link rel="stylesheet" href="${pageContext.request.contextPath}/static/chat/emojiChat.css" />
 </head>
 <body>
 	<h1>2:2 팀전 오목 게임</h1>
