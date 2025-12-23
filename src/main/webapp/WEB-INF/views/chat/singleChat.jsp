@@ -63,5 +63,6 @@
 <script src="<%= request.getContextPath() %>/js/ws-common.js"></script>
 <script src="<%= request.getContextPath() %>/js/game.js"></script>
 
+<script src="<%= request.getContextPath() %>/chat/emojiChat.js"></script>
 </body>
 </html>

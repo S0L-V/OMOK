@@ -100,6 +100,9 @@
     /* 서버로 전송 */
     ws.send("EMOJI_CHAT:" + key);
   }
+  
+  	/* 외부에서 호출 가능하도록 전역 노출 */
+ 	window.sendEmoji = sendEmoji;
 
   btns.forEach((b) => {
     b.addEventListener("click", () => sendEmoji(b.dataset.emoji));
