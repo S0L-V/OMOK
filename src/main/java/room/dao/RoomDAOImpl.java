@@ -169,6 +169,29 @@ public class RoomDAOImpl implements RoomDAO {
 		}
 	}
 
+	@Override
+	public String findHostUserIdByRoomId(String roomId) throws Exception {
+
+		String sql = """
+			    SELECT host_user_id
+			    FROM room
+			    WHERE id = ?
+			""";
+
+		try (
+			Connection conn = DB.getConnection();
+			PreparedStatement ps = conn.prepareStatement(sql)) {
+			ps.setString(1, roomId);
+
+			try (ResultSet rs = ps.executeQuery()) {
+				if (rs.next()) {
+					return rs.getString("host_user_id");
+				}
+				return null;
+			}
+		}
+	}
+
 	private RoomDTO mapToRoom(ResultSet rs) throws SQLException {
 		return RoomDTO.builder()
 			.id(rs.getString("id"))
