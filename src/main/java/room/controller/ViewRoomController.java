@@ -24,17 +24,19 @@ public class ViewRoomController extends HttpServlet {
 		try {
 			String roomId = request.getParameter("roomId");
 			String playType = request.getParameter("playType");
+			HttpSession session = request.getSession(false);
 
-			if (roomId == null) {
+			if (playType == null || roomId == null || session == null) {
 				response.sendRedirect("/lobby");
 				return;
 			}
 
 			request.setAttribute("roomId", roomId);
 			request.setAttribute("playType", playType);
-			HttpSession session = request.getSession(false);
+
 			String userId = (session == null) ? null : (String)session.getAttribute("loginUserId");
 			String hostUserId = roomDAO.findHostUserIdByRoomId(roomId);
+
 			session.setAttribute("hostUserId", hostUserId);
 			session.setAttribute("userId", userId);
 

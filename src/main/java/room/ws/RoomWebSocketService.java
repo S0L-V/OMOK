@@ -87,7 +87,9 @@ public class RoomWebSocketService {
 			String hostUserId;
 			try {
 				hostUserId = roomDao.getHostUserId(roomId);
-				broadcastHostChanged(roomId, hostUserId);
+				if (hostUserId != null) {
+					broadcastHostChanged(roomId, hostUserId);
+				}
 			} catch (Exception e) {
 				e.printStackTrace();
 			}

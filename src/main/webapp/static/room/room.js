@@ -3,7 +3,6 @@
   const roomId = pageEl?.dataset?.roomId || "";
   const roomName = pageEl?.dataset?.roomName || "";
   const userId = pageEl?.dataset?.userId || "";
-  const playType = pageEl.dataset.playType || "";
   
   
 
