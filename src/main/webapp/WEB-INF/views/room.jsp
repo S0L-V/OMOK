@@ -49,16 +49,18 @@
     <section class="grid">
       <section class="card side-nav">
        	 <div>
-       	  <h3>👥 참가자</h3>
+       	  <h3 >👥 참가자</h3>
           <ul id="user-list" class="user-list"></ul>
        	 </div>
-         <form id="start-form"
-        method="post"
-        action="${pageContext.request.contextPath}/game/start?roomId=${roomId}&playType=${playType}">
+		<c:if test="${sessionScope.loginUserId eq sessionScope.hostUserId}">
+		  <form id="start-form"
+		        method="post"
+		        action="${pageContext.request.contextPath}/game/start?roomId=${roomId}&playType=${playType}">
 		    <button type="submit" id="btn-start" class="btn-start">
 		      🎯 시작하기
 		    </button>
 		  </form>
+		</c:if>
       </section>
       <section class="card">
         <h3>💬 채팅</h3>

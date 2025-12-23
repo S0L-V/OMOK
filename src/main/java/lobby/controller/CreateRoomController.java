@@ -60,6 +60,8 @@ public class CreateRoomController extends HttpServlet {
 
 			String roomId = roomResult.getId();
 
+			session.setAttribute("hostUserId", hostUserId);
+
 			roomPlayerDAO.enterIfAbsent(roomResult.getId(), hostUserId);
 
 			LobbyWebSocket.broadcastRoomList();
