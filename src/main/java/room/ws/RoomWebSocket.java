@@ -148,7 +148,7 @@ public class RoomWebSocket {
 				case "ROOM_EXIT": {
 					String roomId = sessionContext.getRoomId(session);
 
-					service.onExit(session, roomId);
+					service.onExit(session, roomId, "ROOM_EXIT");
 					sessionContext.leaveRoom(session);
 
 					service.sendIfOpen(session, "ROOM_EXIT", Map.of());
@@ -215,7 +215,7 @@ public class RoomWebSocket {
 				String result = roomService.exitAndHandleHost(roomId, userId);
 				System.out.println("[RoomWS][EXIT] roomId=" + roomId + " userId=" + userId + " result=" + result);
 
-				service.onExit(session, roomId);
+				service.onExit(session, roomId, result);
 				LobbyWebSocket.broadcastRoomList();
 			}
 		} catch (Exception e) {

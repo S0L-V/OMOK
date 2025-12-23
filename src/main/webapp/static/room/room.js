@@ -2,6 +2,9 @@
   const pageEl = document.querySelector("#room-page");
   const roomId = pageEl?.dataset?.roomId || "";
   const roomName = pageEl?.dataset?.roomName || "";
+  const userId = pageEl?.dataset?.userId || "";
+  
+  
 
   const wsStatus = document.querySelector("#ws-status");
   const chatInput = document.querySelector("#chat-input"); // input
@@ -179,6 +182,31 @@
         case "ROOM_EXIT": {
           appendSystemLog("방에서 나갔습니다.");
           break;
+        }
+        
+        case "HOST_CHANGE": {
+          appendSystemLog("방장이 변경되었습니다.");
+          const p = msg.payload;
+		  const page = document.querySelector("#room-page");
+		  const roomId = page.dataset.roomId;
+		  const playType = page.dataset.playType;
+		  if (p.hostUserId === userId) {
+		    const form = document.createElement("form");
+		      form.id = "start-form";
+		      form.method = "post";
+		      form.action = `/game/start?roomId=${encodeURIComponent(roomId)}&playType=${encodeURIComponent(playType)}`;
+		
+		      const btn = document.createElement("button");
+		      btn.type = "submit";
+		      btn.id = "btn-start";
+		      btn.className = "btn-start";
+		      btn.textContent = "🎯 시작하기";
+		
+		      form.appendChild(btn);
+		      document.querySelector(".side-nav")?.appendChild(form);
+		  }
+		  console.log(p);
+		  break;
         }
 
         case "ERROR": {

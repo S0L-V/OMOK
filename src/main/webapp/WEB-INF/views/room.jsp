@@ -16,6 +16,7 @@
         data-room-name="<c:out value='${roomName}'/>"
         data-play-type="<c:out value='${playType}'/>"
         data-host-user-id="<c:out value='${hostUserId}'/>"
+        data-user-id="<c:out value='${userId}'/>"
         >
 
     <header class="header">

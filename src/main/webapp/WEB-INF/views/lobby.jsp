@@ -44,10 +44,8 @@
   </div>
 </header>
 
-<!-- ✅ 추가 wrapper(레이아웃용). 기존 태그/클래스/아이디는 유지 -->
 <main class="lobby-layout">
 
-  <!-- 좌측: 방 목록 -->
   <section class="lobby-left">
     <h2>게임 방 목록</h2>
     <p class="subtext">참여할 게임을 선택하세요</p>
