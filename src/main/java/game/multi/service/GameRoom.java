@@ -20,6 +20,7 @@ import javax.websocket.Session;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 
+import config.AppConfig;
 import game.multi.service.MultiGameService.SendJob;
 
 // 하나의 게임 방을 나타내는 객체
@@ -470,7 +471,7 @@ public class GameRoom {
 	                """, gameId, roomId, resultsJson.toString()); // playType="1" (Multi)
 			
 			// API 전송
-            URL url = new URL("http://localhost:8089/record/save"); 
+			URL url = new URL(AppConfig.get("APP.BASE_URL") + "/record/save");
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
             conn.setRequestMethod("POST");
             conn.setRequestProperty("Content-Type", "application/json");

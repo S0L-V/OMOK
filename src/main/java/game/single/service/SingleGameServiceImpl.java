@@ -17,6 +17,8 @@ import javax.websocket.Session;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 
+import config.AppConfig;
+
 public class SingleGameServiceImpl implements SingleGameService {
 
 //	private static SingleGameServiceImpl instance = new SingleGameServiceImpl();
@@ -302,7 +304,7 @@ public class SingleGameServiceImpl implements SingleGameService {
             );
             
             // 2. HTTP POST 요청
-            URL url = new URL("http://localhost:8089/record/save");  // :dart: 네 Endpoint!
+            URL url = new URL(AppConfig.get("APP.BASE_URL") + "/record/save");
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
             
             conn.setRequestMethod("POST");
