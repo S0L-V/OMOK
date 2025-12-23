@@ -192,7 +192,7 @@
         resBox.textContent = "HTTP " + resp.status + "\n" + text;
 
         if (resp.ok) {
-          window.location.href = "http://localhost:8089/lobby";
+        	window.location.href = "<%=request.getContextPath()%>/lobby";
         }
       } catch (e) {
         resBox.textContent = "요청 실패: " + e;
