@@ -1,6 +1,6 @@
 <%@ page contentType="text/html; charset=UTF-8" %>
 
-<!-- 게임 중 이모지 전용 UI (fragment) -->
+<!-- 게임 중 이모지 전용 UI -->
 <div class="emoji-game-wrap">
   <div class="player-cards">
     <div id="p1" class="player-card">
