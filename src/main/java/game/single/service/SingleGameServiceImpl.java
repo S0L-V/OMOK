@@ -49,7 +49,11 @@ public class SingleGameServiceImpl implements SingleGameService {
 	
 	@Override
 	public synchronized void onOpen(Session session, String userId) throws Exception {
+		System.out.println("[SingleGame] onOpen - roomId=" + roomId + " userId=" + userId
+			+ " currentPlayers=" + players.size() + " sessionId=" + session.getId());
+
 		if (players.size() >= 2) {
+			System.out.println("[SingleGame] REJECT - 이미 2명이 접속중입니다.");
 	        session.close();
 	        return;
 	    }
@@ -58,7 +62,7 @@ public class SingleGameServiceImpl implements SingleGameService {
 	    players.add(session);
 	    sessionToUserId.put(session, userId);
 
-	    System.out.println("접속: " + session.getId());
+	    System.out.println("[SingleGame] 접속 완료: " + session.getId() + " (현재 " + players.size() + "명)");
 
 	    // 2) 아직 2명 안 찼으면 WAIT 브로드캐스트
 	    if (players.size() < 2) {
@@ -96,9 +100,14 @@ public class SingleGameServiceImpl implements SingleGameService {
 
 	@Override
 	public synchronized void onMessage(String msg, Session session) throws Exception {
-		if (gameOver.get())
+		System.out.println("[SingleGame] onMessage - msg=" + msg + " sessionId=" + session.getId()
+			+ " gameOver=" + gameOver.get() + " turn=" + turn.get() + " players.size=" + players.size());
+
+		if (gameOver.get()) {
+			System.out.println("[SingleGame] 게임이 이미 종료됨 - 메시지 무시");
 			return;
-		
+		}
+
 		JsonObject json = gson.fromJson(msg, JsonObject.class);
 
 		if (msg.contains("SINGLE_GIVEUP")) {
@@ -125,8 +134,17 @@ public class SingleGameServiceImpl implements SingleGameService {
 			return;
 		}
 
-		if (players.get(turn.get()) != session)
+		int currentTurnIdx = turn.get();
+		Session currentTurnSession = (currentTurnIdx < players.size()) ? players.get(currentTurnIdx) : null;
+		System.out.println("[SingleGame] 턴 체크 - currentTurnIdx=" + currentTurnIdx
+			+ " currentTurnSession=" + (currentTurnSession != null ? currentTurnSession.getId() : "null")
+			+ " requestSession=" + session.getId()
+			+ " isSame=" + (currentTurnSession == session));
+
+		if (players.get(turn.get()) != session) {
+			System.out.println("[SingleGame] 턴이 아닌 플레이어의 요청 - 무시");
 			return;
+		}
 		
 		if (!json.has("x") || !json.has("y")) {
 			return;
@@ -182,11 +200,15 @@ public class SingleGameServiceImpl implements SingleGameService {
 
 	@Override
 	public synchronized void onClose(Session session) {
+		System.out.println("[SingleGame] onClose - sessionId=" + session.getId()
+			+ " currentPlayers=" + players.size());
+
 		players.remove(session);
 		sessionToUserId.remove(session);
 
 	    // 남은 사람이 없으면 게임 리셋(혹은 게임 종료 처리)
 	    if (players.isEmpty()) {
+			System.out.println("[SingleGame] 모든 플레이어 나감 - 게임 리셋");
 	        board = new int[15][15];
 	        turn.set(0);
 	        gameOver.set(false);
@@ -194,7 +216,7 @@ public class SingleGameServiceImpl implements SingleGameService {
 	        wpass = 0;
 	        if (turnTask != null) turnTask.cancel(false);
 	    }
-	    System.out.println("연결 종료: " + session.getId());
+	    System.out.println("[SingleGame] 연결 종료 완료: " + session.getId() + " (남은 플레이어: " + players.size() + "명)");
 	}
 
 	private synchronized void startTurnTimer() {

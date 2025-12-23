@@ -10,6 +10,7 @@ public class RoomService {
 
 	private static final String STATUS_IN_ROOM = "0";
 	private static final String STATUS_EXIT = "2";
+	private static final String DELETED_ROOM_ID = "00000000-0000-0000-0000-000000000000";
 
 	/**
 	 * @return 결과 상태
@@ -72,6 +73,12 @@ public class RoomService {
 			  AND host_user_id = ?
 			""";
 
+		final String qUpdateGameResultRoomId = """
+			UPDATE game_result
+			SET room_id = ?
+			WHERE room_id = ?
+			""";
+
 		final String qDeleteRoomPlayers = """
 			DELETE FROM room_player
 			WHERE room_id = ?
@@ -87,12 +94,19 @@ public class RoomService {
 
 			try {
 				// 방 row 잠금
+				boolean roomExists = false;
 				try (PreparedStatement pstmt = conn.prepareStatement(qLockRoom)) {
 					pstmt.setString(1, roomId);
 					try (ResultSet rs = pstmt.executeQuery()) {
-						if (!rs.next())
-							throw new IllegalArgumentException("room not found: " + roomId);
+						roomExists = rs.next();
 					}
+				}
+
+				// 방이 이미 삭제되었으면 조용히 종료 (정상 처리)
+				if (!roomExists) {
+					System.out.println("[RoomService] 방이 이미 삭제됨 - roomId=" + roomId);
+					conn.commit();
+					return "ROOM_DELETE";
 				}
 
 				// 퇴장 처리 (IN_ROOM -> EXIT)
@@ -105,8 +119,11 @@ public class RoomService {
 					updated = pstmt.executeUpdate();
 				}
 
+				System.out.println("[RoomService] 퇴장 처리 - roomId=" + roomId + " userId=" + userId + " updated=" + updated);
+
 				// 이미 나가있거나 없는 유저면 아무 것도 안 함
 				if (updated == 0) {
+					System.out.println("[RoomService] 이미 나간 유저 - 종료");
 					conn.commit();
 					return "ROOM_EXIT";
 				}
@@ -128,18 +145,32 @@ public class RoomService {
 					}
 				}
 
+				System.out.println("[RoomService] 남은 인원 - roomId=" + roomId + " activeCnt=" + activeCnt);
+
 				// 방에 아무도 없으면 방 삭제
 				if (activeCnt == 0) {
+					// 1) game_result의 room_id를 특수 값으로 변경 (외래 키 제약 조건 회피)
+					try (PreparedStatement pstmt = conn.prepareStatement(qUpdateGameResultRoomId)) {
+						pstmt.setString(1, DELETED_ROOM_ID);
+						pstmt.setString(2, roomId);
+						int gameResultUpdated = pstmt.executeUpdate();
+						System.out.println("[RoomService] game_result의 room_id 업데이트: " + gameResultUpdated + "건");
+					}
+
+					// 2) room_player 삭제
 					try (PreparedStatement pstmt = conn.prepareStatement(qDeleteRoomPlayers)) {
 						pstmt.setString(1, roomId);
 						pstmt.executeUpdate();
 					}
+
+					// 3) room 삭제
 					try (PreparedStatement pstmt = conn.prepareStatement(qDeleteRoom)) {
 						pstmt.setString(1, roomId);
 						pstmt.executeUpdate();
 					}
 
 					conn.commit();
+					System.out.println("[RoomService] 방 삭제 완료: " + roomId);
 					return "ROOM_DELETE";
 				}
 
