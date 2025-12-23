@@ -69,7 +69,7 @@ public class RoomController extends HttpServlet {
 
 	/**
 	 * GET /room/count?roomId=
-	 * 응답: { ok:true, data:{ roomId, totalCount, activeCount } }
+	 * 응답: { ok:true, data:{ roomId, activeCount } }
 	 */
 	private void handleGetCount(HttpServletRequest req, HttpServletResponse res, String userId) throws Exception {
 		String roomId = req.getParameter("roomId");
