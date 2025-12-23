@@ -22,4 +22,11 @@ public interface RoomDAO {
 	 */
 	String getHostUserId(String roomId) throws Exception;
 
+	/**
+	* roomId로 방장 userId 조회
+	* @param roomId 방 ID
+	* @return hostUserId (없으면 null)
+	*/
+	String findHostUserIdByRoomId(String roomId) throws Exception;
+
 }

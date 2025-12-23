@@ -9,6 +9,8 @@ import javax.websocket.Session;
 
 import com.google.gson.Gson;
 
+import room.dao.RoomDAO;
+import room.dao.RoomDAOImpl;
 import room.dao.RoomPlayerDAO;
 import room.dao.RoomPlayerDAOImpl;
 import room.dto.RoomPlayerDTO;
@@ -25,6 +27,7 @@ public class RoomWebSocketService {
 	private static final SessionContext sessionContext = SessionContext.getInstance();
 	private static final RoomSessionRegistry roomRegistry = RoomSessionRegistry.getInstance();
 	private final RoomPlayerDAO roomPlayerDao = new RoomPlayerDAOImpl();
+	private final RoomDAO roomDao = new RoomDAOImpl();
 
 	public void sendIfOpen(Session s, String type, Map<String, Object> payload) {
 		if (s == null || !s.isOpen())
@@ -74,22 +77,35 @@ public class RoomWebSocketService {
 			"text", text));
 	}
 
-	public void onExit(Session session, String roomId) {
+	public void onExit(Session session, String roomId, String result) {
 		if (roomId == null || roomId.isBlank())
 			return;
 
 		roomRegistry.leave(roomId, session);
 
+		if ("HOST_CHANGE".equals(result)) {
+			String hostUserId;
+			try {
+				hostUserId = roomDao.getHostUserId(roomId);
+				if (hostUserId != null) {
+					broadcastHostChanged(roomId, hostUserId);
+				}
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+		}
 		broadcast(roomId, "USER_EXIT", Map.of(
 			"userId", sessionContext.getUserId(session),
 			"nickname", sessionContext.getNickname(session)));
+
 	}
 
 	/** @OnClose/@OnError 최종 정리 */
 	public void cleanup(Session session) {
 		String roomId = sessionContext.getRoomId(session);
 		if (roomId != null && !roomId.isBlank()) {
-			onExit(session, roomId);
+			onExit(session, roomId, null);
 			sessionContext.leaveRoom(session);
 		} else {
 			roomRegistry.removeFromAnyRoom(session);
@@ -109,6 +125,17 @@ public class RoomWebSocketService {
 		payload.put("playType", playType); // "0"(개인전) / "1"(팀전)
 
 		broadcast(roomId, "GAME_START", payload);
+	}
+
+	public void broadcastHostChanged(String roomId, String hostUserId) {
+		if (roomId == null || roomId.isBlank())
+			return;
+
+		Map<String, Object> payload = new HashMap<>();
+		payload.put("roomId", roomId);
+		payload.put("hostUserId", hostUserId);
+
+		broadcast(roomId, "HOST_CHANGE", payload);
 	}
 
 	private void broadcast(String roomId, String type, Map<String, Object> payload) {

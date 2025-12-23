@@ -59,6 +59,7 @@ public class GameStartController extends HttpServlet {
 				response.sendError(HttpServletResponse.SC_FORBIDDEN, "게임 시작 권한이 없습니다. (host만 가능)");
 				return;
 			}
+
 			int updated = roomPlayerDao.updatePlayersToInGame(roomId);
 
 			System.out.println("[GameStart] roomId=" + roomId + " updatedPlayers=" + updated);
