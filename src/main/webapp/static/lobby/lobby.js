@@ -118,5 +118,49 @@
     try { lobbyWs?.close(); } catch (_) {}
   });
 
+  // 일반 로그인 처리
+  const btnLogin = document.getElementById("btn-login");
+  const emailInput = document.getElementById("login-email");
+  const passwordInput = document.getElementById("login-password");
+
+  if (btnLogin && emailInput && passwordInput) {
+    btnLogin.addEventListener("click", async () => {
+      const email = emailInput.value.trim();
+      const password = passwordInput.value.trim();
+
+      if (!email || !password) {
+        alert("이메일과 비밀번호를 입력해주세요.");
+        return;
+      }
+
+      try {
+        const response = await fetch(CTX + "/noamlLogin", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, password })
+        });
+
+        const data = await response.json();
+
+        if (response.ok && data.accessToken) {
+          alert("로그인 성공!");
+          location.reload();
+        } else {
+          alert(data.message || "로그인 실패");
+        }
+      } catch (error) {
+        console.error("로그인 오류:", error);
+        alert("로그인 중 오류가 발생했습니다.");
+      }
+    });
+
+    // Enter 키로 로그인
+    passwordInput.addEventListener("keypress", (e) => {
+      if (e.key === "Enter") {
+        btnLogin.click();
+      }
+    });
+  }
+
   connectLobby();
 })();
