@@ -54,10 +54,7 @@
     /* 내 슬롯 */
     showBubbleOnSlot(window.mySlot, emoji);
 
-    ws.send(JSON.stringify({
-      type: "EMOJI_CHAT",
-      emoji: key
-    }));
+    ws.send("EMOJI_CHAT:" + key);
   }
 
   window.sendEmoji = sendEmoji;
