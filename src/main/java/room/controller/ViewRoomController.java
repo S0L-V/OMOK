@@ -34,8 +34,13 @@ public class ViewRoomController extends HttpServlet {
 			request.setAttribute("roomId", roomId);
 			request.setAttribute("playType", playType);
 
-			String userId = (session == null) ? null : (String)session.getAttribute("loginUserId");
+			String userId = (String)session.getAttribute("loginUserId");
 			String hostUserId = roomDAO.findHostUserIdByRoomId(roomId);
+
+			if (hostUserId == null) {
+				response.sendRedirect("/lobby?error=host_not_found");
+				return;
+			}
 
 			session.setAttribute("hostUserId", hostUserId);
 			session.setAttribute("userId", userId);
