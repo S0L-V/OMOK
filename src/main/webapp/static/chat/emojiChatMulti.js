@@ -35,7 +35,7 @@
   window.onEmojiChat = (payload) => {
     if (!payload) return;
 
-    const slot = payload.fromSlot;
+    const slot = payload.slot;
     const key = payload.emoji;
     const emoji = EMOJI_MAP[key] || key;
 
