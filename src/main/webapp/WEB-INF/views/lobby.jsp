@@ -89,15 +89,15 @@
           <!-- (디자인용) 기본 로그인 UI -->
           <div class="field">
             <label>이메일</label>
-            <input type="text" placeholder="이메일" />
+            <input id="login-email" type="text" placeholder="이메일" />
           </div>
 
           <div class="field">
             <label>비밀번호</label>
-            <input type="password" placeholder="비밀번호" />
+            <input id="login-password" type="password" placeholder="비밀번호" />
           </div>
 
-          <button type="button" class="btn-primary" onclick="alert('카카오 로그인으로 진행해주세요!')">
+          <button type="button" class="btn-primary" id="btn-login">
             로그인
           </button>
 
@@ -108,7 +108,7 @@
           </a>
 
           <p class="signup-hint">
-            계정이 없으신가요? <a href="#">회원가입</a>
+            계정이 없으신가요? <a href="${pageContext.request.contextPath}/signup2">회원가입</a>
           </p>
         </c:when>
 
