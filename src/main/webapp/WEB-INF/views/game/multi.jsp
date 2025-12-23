@@ -304,6 +304,6 @@
 	</script>
 
     <!-- 절대경로 로드 -->
-    <script src="/chat/emojiChat.js"></script>
+    <script src="/chat/emojiChat-multi.js"></script>
 </body>
 </html>
