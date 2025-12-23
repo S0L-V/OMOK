@@ -3,6 +3,7 @@
   const roomId = pageEl?.dataset?.roomId || "";
   const roomName = pageEl?.dataset?.roomName || "";
   const userId = pageEl?.dataset?.userId || "";
+  const playType = pageEl.dataset.playType || "";
   
   
 
@@ -185,28 +186,24 @@
         }
         
         case "HOST_CHANGE": {
-          appendSystemLog("방장이 변경되었습니다.");
-          const p = msg.payload;
-		  const page = document.querySelector("#room-page");
-		  const roomId = page.dataset.roomId;
-		  const playType = page.dataset.playType;
-		  if (p.hostUserId === userId) {
-		    const form = document.createElement("form");
-		      form.id = "start-form";
-		      form.method = "post";
-		      form.action = `/game/start?roomId=${encodeURIComponent(roomId)}&playType=${encodeURIComponent(playType)}`;
+		  appendSystemLog("방장이 변경되었습니다.");
+		  const p = msg.payload;
 		
-		      const btn = document.createElement("button");
-		      btn.type = "submit";
-		      btn.id = "btn-start";
-		      btn.className = "btn-start";
-		      btn.textContent = "🎯 시작하기";
+		  if (p.hostUserId !== userId) break;
 		
-		      form.appendChild(btn);
-		      document.querySelector(".side-nav")?.appendChild(form);
-		  }
-		  console.log(p);
+		  if (document.querySelector("#btn-start")) break;
+		
+		  const btn = document.createElement("button");
+		  btn.type = "button";          
+		  btn.id = "btn-start";
+		  btn.className = "btn-start";
+		  btn.textContent = "🎯 시작하기";
+		
+		  btn.addEventListener("click", startButtonClick);
+		
+		  document.querySelector(".side-nav")?.appendChild(btn);
 		  break;
+		  
         }
 
         case "ERROR": {
@@ -253,32 +250,60 @@
     location.href = "/lobby";
   });
   
-  const startForm = document.querySelector("#start-form");
-  startForm?.addEventListener("submit", async (e) => {
-    e.preventDefault();
+const btnStart = document.querySelector("#btn-start");
 
-    const formData = new FormData(startForm);
-    const params = new URLSearchParams(formData);
-
-    try {
-      const response = await fetch(startForm.action, {
-        method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8" },
-        body: params,
-      });
-
-      if (!response.ok) {
-        const text = await response.text();
-        alert(`게임 시작 실패: ${text}`);
-      }
-      // 성공 시: 서버가 WS로 GAME_START를 보내면
-      // room.js의 GAME_START 핸들러가 페이지 이동 처리함 :contentReference[oaicite:2]{index=2}
-    } catch (err) {
-      console.error("게임 시작 요청 실패:", err);
-      alert("게임 시작 요청 중 오류가 발생했습니다.");
-    }
-  });
-
+		btnStart?.addEventListener("click", async () => {
+			startButtonClick()
+		});
+		
+		async function startButtonClick() {
+			  const page = document.querySelector("#room-page");
+		  const roomId = page.dataset.roomId;
+		  const playType = page.dataset.playType;
+		  const contextPath = page.dataset.contextPath || "";
+		
+		  try {
+		    const countRes = await fetch(
+		      `${contextPath}/room/count?roomId=${encodeURIComponent(roomId)}`,
+		      { method: "GET", credentials: "same-origin" }
+		    );
+		    const countResult = await countRes.json();
+		
+		    if (!countResult.ok) {
+		      alert(countResult.message || "인원 수 조회 실패");
+		      return;
+		    }
+		
+		    const { activeCount } = countResult.data;
+		    const minPlayers = playType === "1" ? 4 : 2;
+		
+		    if (activeCount < minPlayers) {
+		      alert(`아직 인원이 부족합니다. (최소 ${minPlayers}명 필요)`);
+		      return;
+		    }
+		
+		    const body = new URLSearchParams();
+		    body.set("roomId", roomId);
+		    body.set("playType", playType);
+		
+		    const startRes = await fetch(`${contextPath}/game/start`, {
+		      method: "POST",
+		      headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8" },
+		      body,
+		      credentials: "same-origin",
+		    });
+		
+		    if (!startRes.ok) {
+		      const text = await startRes.text();
+		      alert(`게임 시작 실패: ${text}`);
+		      return;
+		    }
+		
+		  } catch (err) {
+		    console.error(err);
+		    alert("게임 시작 요청 중 오류가 발생했습니다.");
+		  }
+		}
   /* IME 조합 상태 추적 (한글 뒷글자 중복 방지) */
   let isComposing = false;
   chatInput?.addEventListener("compositionstart", () => {

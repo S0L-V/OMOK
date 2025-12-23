@@ -54,13 +54,9 @@
           <ul id="user-list" class="user-list"></ul>
        	 </div>
 		<c:if test="${sessionScope.loginUserId eq sessionScope.hostUserId}">
-		  <form id="start-form"
-		        method="post"
-		        action="${pageContext.request.contextPath}/game/start?roomId=${roomId}&playType=${playType}">
-		    <button type="submit" id="btn-start" class="btn-start">
+		  <button type="submit" id="btn-start" class="btn-start">
 		      🎯 시작하기
 		    </button>
-		  </form>
 		</c:if>
       </section>
       <section class="card">
