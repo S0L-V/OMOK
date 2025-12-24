@@ -12,6 +12,8 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
 import lobby.ws.LobbyWebSocket;
+import room.dao.RoomDAO;
+import room.dao.RoomDAOImpl;
 import room.dao.RoomPlayerDAO;
 import room.dao.RoomPlayerDAOImpl;
 
@@ -20,6 +22,7 @@ public class EnterRoomController extends HttpServlet {
 	private static final long serialVersionUID = 1L;
 
 	private final RoomPlayerDAO roomPlayerDao = new RoomPlayerDAOImpl();
+	private final RoomDAO roomDAO = new RoomDAOImpl();
 
 	@Override
 	protected void doPost(HttpServletRequest request, HttpServletResponse response)
@@ -30,8 +33,13 @@ public class EnterRoomController extends HttpServlet {
 		try {
 			String roomId = request.getParameter("roomId");
 			String playType = request.getParameter("playType");
+			String roomPwd = request.getParameter("roomPwd");
+			String isPublic = request.getParameter("isPublic");
+
+			System.out.println("isPublic: " + isPublic);
+
 			if (roomId == null || roomId.isBlank() || playType == null || playType.isBlank()) {
-				response.sendRedirect(ctx + "/lobby?error=missing_room_id");
+				response.sendRedirect(ctx + "/lobby?error=missing_room_info");
 				return;
 			}
 
@@ -40,6 +48,18 @@ public class EnterRoomController extends HttpServlet {
 			if (userId == null || userId.isBlank()) {
 				response.sendRedirect(ctx + "/lobby?error=enter_failed");
 				return;
+			}
+
+			if ("private".equals(isPublic)) {
+				if (roomPwd == null || roomPwd.isBlank()) {
+					response.sendRedirect(ctx + "/lobby?error=need_password");
+					return;
+				}
+
+				if (!roomDAO.matchRoomPassword(roomId, roomPwd)) {
+					response.sendRedirect(ctx + "/lobby?error=wrong_password");
+					return;
+				}
 			}
 
 			roomPlayerDao.enterIfAbsent(roomId, userId);

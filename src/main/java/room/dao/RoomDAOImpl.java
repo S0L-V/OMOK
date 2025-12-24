@@ -192,6 +192,28 @@ public class RoomDAOImpl implements RoomDAO {
 		}
 	}
 
+	public boolean matchRoomPassword(String roomId, String inputPwd) throws Exception {
+		final String query = """
+			SELECT COUNT(*)
+			FROM room
+			WHERE id = ?
+			  AND is_public = '1'
+			  AND room_pwd = ?
+			""";
+
+		try (Connection conn = DB.getConnection();
+			PreparedStatement pstmt = conn.prepareStatement(query)) {
+
+			pstmt.setString(1, roomId);
+			pstmt.setString(2, inputPwd);
+
+			try (ResultSet rs = pstmt.executeQuery()) {
+				rs.next();
+				return rs.getInt(1) == 1;
+			}
+		}
+	}
+
 	private RoomDTO mapToRoom(ResultSet rs) throws SQLException {
 		return RoomDTO.builder()
 			.id(rs.getString("id"))

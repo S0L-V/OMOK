@@ -187,11 +187,11 @@
       <div class="row">
         <label>공개 여부</label>
         <label>
-          <input type="radio" name="isPublic" value="1" checked onclick="togglePwd(false)" />
+          <input type="radio" name="isPublic" value="0" checked onclick="togglePwd(false)" />
           공개
         </label>
         <label>
-          <input type="radio" name="isPublic" value="0" onclick="togglePwd(true)" />
+          <input type="radio" name="isPublic" value="1" onclick="togglePwd(true)" />
           비공개 🔒
         </label>
       </div>

@@ -68,6 +68,7 @@ public class CreateRoomController extends HttpServlet {
 			response.sendRedirect(
 				request.getContextPath() + "/room?roomId=" + URLEncoder.encode(roomId, StandardCharsets.UTF_8)
 					+ "&playType=" + URLEncoder.encode(playType, StandardCharsets.UTF_8));
+
 		} catch (Exception e) {
 			e.printStackTrace();
 			throw new ServletException("방 생성 실패", e);
