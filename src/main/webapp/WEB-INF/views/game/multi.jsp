@@ -1,180 +1,288 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8"
     pageEncoding="UTF-8"%>
-<%@ page isELIgnored="true" %>
 <!DOCTYPE html>
 <html>
 <head>
 <meta charset="UTF-8">
 <title>2 vs 2 Team Omok</title>
 
-<style>
-  canvas { border: 1px solid black; background-color: #e3c986; } /* 오목판 색상 */
-  #timer { font-size: 20px; font-weight: bold; margin-top: 10px; }
-  #status { font-size: 18px; color: blue; font-weight: bold; margin-bottom: 5px; }
-
-  .page-wrap {
-    width: 100%;
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 20px 16px;
-  }
-
-  .game-layout {
-    display: flex;
-    justify-content: center; /* 보드 중앙 */
-    align-items: flex-start;
-    gap: 24px;
-    margin-top: 10px;
-  }
-
-  .side-col {
-    width: 240px;
-    min-height: 520px;
-    display: flex;
-    flex-direction: column;
-  }
-
-  .side-col .slot-top { margin-bottom: 14px; }
-  .side-col .slot-bottom { margin-top: auto; }
-
-  .board-col {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-  }
-
-  .player-card {
-    position: relative;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 12px 16px;
-    border: 1px solid #ddd;
-    border-radius: 14px;
-    min-width: 200px;
-    background: #fff;
-  }
-  .player-card .profile { width: 40px; height: 40px; border-radius: 50%; background: #eee; }
-  .player-card .name { font-weight: 600; }
-  .player-card .bubble {
-    position: absolute;
-    right: -14px;
-    top: -14px;
-    padding: 6px 10px;
-    background: #fff;
-    border: 1px solid #ddd;
-    border-radius: 12px;
-    font-size: 20px;
-    display: none;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.15);
-  }
-</style>
-
 <!-- 정적 리소스 경로: /static/chat/... -->
 <link rel="stylesheet" href="<%= request.getContextPath() %>/static/chat/emojiChat.css" />
+<link rel="stylesheet" href="/resources/css/omok.css">
 </head>
 
 <body>
-<div class="page-wrap">
-  <h1>2:2 팀전 오목 게임</h1>
-  <div id="status">대기 중...</div>
+<script>
+  window.loginUserId = "<%= (String)session.getAttribute("loginUserId") %>";
+  window.loginNickname = "<%= (String)session.getAttribute("loginNickname") %>";
+  window.contextPath = "<%= request.getContextPath() %>";
+</script>
 
-  <div class="game-layout">
-    <div class="side-col">
-      <div class="slot-top">
-        <div id="p1" class="player-card" data-slot="0">
-          <div class="profile"></div>
-          <div class="name">P1</div>
-          <div class="bubble"></div>
-        </div>
-      </div>
-      <div class="slot-bottom">
-        <div id="p4" class="player-card" data-slot="2">
-          <div class="profile"></div>
-          <div class="name">P4</div>
-          <div class="bubble"></div>
-        </div>
-      </div>
-    </div>
+<div class="game-wrap">
+  <h1 class="game-title">2 vs 2 TEAM OMOK</h1>
 
-    <div class="board-col">
-      <canvas id="board" width="450" height="450"></canvas>
-
-      <div id="log" style="width: 450px; height: 150px; overflow-y: auto; border: 1px solid #ccc; padding: 5px; margin-top: 10px;"></div>
-      <div id="timer" style="width: 450px;"></div>
-
-      <div class="emoji-game-wrap" style="width: 450px; margin-top: 10px;">
-        <div class="emoji-buttons">
-          <button type="button" data-emoji="smile">🙂</button>
-          <button type="button" data-emoji="angry">😡</button>
-          <button type="button" data-emoji="clap">👏</button>
-        </div>
-        <div id="emoji-ws-status" class="ws-status">EMOJI: 준비</div>
-      </div>
-
-      <button onclick="giveUp()" style="margin-top:10px; padding: 5px 10px;">기권하기</button>
-    </div>
-
-    <div class="side-col">
-      <div class="slot-top">
-        <div id="p3" class="player-card" data-slot="1">
-          <div class="profile"></div>
-          <div class="name">P3</div>
-          <div class="bubble"></div>
-        </div>
-      </div>
-      <div class="slot-bottom">
-        <div id="p2" class="player-card" data-slot="3">
-          <div class="profile"></div>
-          <div class="name">P2</div>
-          <div class="bubble"></div>
-        </div>
-      </div>
+  <div class="status-bar">
+    <div id="status" class="status-text">대기 중...</div>
+    <div class="chips">
+      <div id="timer" class="chip">-</div>
     </div>
   </div>
 
+  <div class="game-grid">
+
+    <!-- LEFT: 상대팀 -->
+    <section class="card turn-ring" id="leftPanel">
+      <div class="card-header">
+        <div class="card-title">상대팀</div>
+        <span id="opTeamBadge" class="badge">-</span>
+      </div>
+      <div class="card-body">
+        <div id="opTopSlot"></div>
+        <div style="height:12px;"></div>
+        <div id="opBottomSlot"></div>
+      </div>
+    </section>
+
+    <!-- CENTER: 보드 + 로그 -->
+    <section class="card board-card">
+      <div class="card-header">
+        <div class="card-title">오목판</div>
+        <button class="btn btn-danger" onclick="giveUp()">기권하기</button>
+      </div>
+
+      <div class="card-body">
+        <canvas id="board" width="450" height="450"></canvas>
+      </div>
+
+      <div class="card-body log-body">
+        <div class="card-title log-title">로그</div>
+        <div id="log" class="log"></div>
+      </div>
+    </section>
+
+    <!-- RIGHT: 우리팀 (위=팀원 / 아래=나) -->
+    <section class="card turn-ring" id="rightPanel">
+      <div class="card-header">
+        <div class="card-title">우리팀</div>
+        <span id="myTeamBadge" class="badge">-</span>
+      </div>
+      <div class="card-body">
+        <div id="allyTopSlot"></div>
+        <div style="height:12px;"></div>
+        <div id="mySlot"></div>
+
+        <!-- ✅ 이모지 버튼은 "나" 카드 옆(오른쪽 패널) 아래에 배치 -->
+        <div style="height:12px;"></div>
+        <div id="myEmojiButtonsSlot"></div>
+        <div id="myEmojiStatusSlot" style="margin-top:10px;"></div>
+      </div>
+    </section>
+
+  </div>
+
+  <!-- ✅ 기존 p1~p4는 삭제하지 말고 유지(단, 화면엔 안 보이게) -->
+  <div style="display:none">
+    <div id="p1" class="player-card" data-slot="0">
+      <div class="profile"></div><div class="name">P1</div><div class="bubble"></div>
+    </div>
+    <div id="p2" class="player-card" data-slot="3">
+      <div class="profile"></div><div class="name">P2</div><div class="bubble"></div>
+    </div>
+    <div id="p3" class="player-card" data-slot="1">
+      <div class="profile"></div><div class="name">P3</div><div class="bubble"></div>
+    </div>
+    <div id="p4" class="player-card" data-slot="2">
+      <div class="profile"></div><div class="name">P4</div><div class="bubble"></div>
+    </div>
+
+    <!-- 기존 이모지 UI도 여기서 유지(스크립트가 찾게) -->
+    <div class="emoji-game-wrap">
+      <div class="emoji-buttons">
+        <button type="button" data-emoji="smile">🙂</button>
+        <button type="button" data-emoji="angry">😡</button>
+        <button type="button" data-emoji="clap">👏</button>
+      </div>
+      <div id="emoji-ws-status" class="ws-status">EMOJI: 준비</div>
+    </div>
+  </div>
+</div>
+
 <script>
-  const canvas = document.getElementById("board");
-  const ctx = canvas.getContext("2d");
-  const size = 30;
-  const statusDiv = document.getElementById("status");
+document.addEventListener("DOMContentLoaded", () => {
+  // 1) 기존 카드들
+  const p1 = document.getElementById("p1"); // slot 0
+  const p2 = document.getElementById("p2"); // slot 3
+  const p3 = document.getElementById("p3"); // slot 1
+  const p4 = document.getElementById("p4"); // slot 2
 
-  let myIdx = -1;
-  let myColor = 0;
-  let isMyTurn = false;
-  let gameOver = false;
-  let remainsec = 0;
-  let timer = null;
+  // 2) 멀티 슬롯들(네가 만든 div id들)
+  const opTopSlot    = document.getElementById("opTopSlot");
+  const opBottomSlot = document.getElementById("opBottomSlot");
+  const allyTopSlot  = document.getElementById("allyTopSlot");
+  const mySlot       = document.getElementById("mySlot");
 
-  drawBoard();
+  // 3) 이모지 UI
+  const btns   = document.querySelector(".emoji-buttons");
+  const status = document.getElementById("emoji-ws-status");
+  const btnSlot = document.getElementById("myEmojiButtonsSlot");
+  const stSlot  = document.getElementById("myEmojiStatusSlot");
 
-  const params = new URLSearchParams(window.location.search);
-  const playType = params.get("playType");
-  const roomId = params.get("roomId");
-
-  if (!roomId) {
-    alert("roomId가 없습니다. URL에 roomId를 포함해 주세요.");
-    throw new Error("Missing roomId");
+  if (!p1 || !p2 || !p3 || !p4 || !opTopSlot || !opBottomSlot || !allyTopSlot || !mySlot) {
+    console.warn("멀티 프로필 이동 실패", { p1, p2, p3, p4, opTopSlot, opBottomSlot, allyTopSlot, mySlot });
+    return;
   }
 
-  const wsProtocol = (location.protocol === "https:") ? "wss" : "ws";
-  const contextPath = "<%= request.getContextPath() %>";
-  const wsUrl = wsProtocol + "://" + location.host + contextPath + "/game/multi/ws?roomId=" + encodeURIComponent(roomId);
+  // ✅ 여기서는 '임시 배치'만 해둠(일단 화면에 뜨게)
+  //   실제로 '누가 나냐'는 GAME_MULTI_START에서 myIdx 받고 다시 재배치함
+  opTopSlot.appendChild(p1);
+  opBottomSlot.appendChild(p4);
+  allyTopSlot.appendChild(p3);
+  mySlot.appendChild(p2);
 
-  const ws = new WebSocket(wsUrl);
+  // ✅ 이모지 버튼/상태도 슬롯으로 이동 (버튼 죽는 문제 방지)
+  if (btns && btnSlot) btnSlot.appendChild(btns);
+  if (status && stSlot) stSlot.appendChild(status);
 
-  /* emojiChatMulti.js에서 사용 */
-  window.singleWs = ws;
-  window.contextPath = contextPath;
-  window.roomId = roomId;
+  // ✅ 원래 wrapper 숨김(선택) - 단, btn/status 이동 후!
+  const wrap = document.querySelector(".emoji-game-wrap");
+  if (wrap) wrap.style.display = "none";
+});
+</script>
 
-  ws.onopen = () => log("서버에 연결되었습니다. 매칭을 기다립니다...");
-  ws.onmessage = (e) => handle(JSON.parse(e.data));
-  ws.onerror = (e) => console.error("WebSocket error", e);
-  ws.onclose = () => {
-    log("연결이 종료되었습니다.");
-    statusDiv.innerText = "연결 끊김";
-  };
+<script>
+	 const canvas = document.getElementById("board");
+	 const ctx = canvas.getContext("2d");
+	 const size = 30;
+	 const statusDiv = document.getElementById("status");
+	
+	 let myIdx = -1;
+	 let myColor = 0;
+	 let isMyTurn = false;
+	 let gameOver = false;
+	 let remainsec = 0;
+	 let timer = null;
+	
+	 drawBoard();
+	
+	 const params = new URLSearchParams(window.location.search);
+	 const playType = params.get("playType");
+	 const roomId = params.get("roomId");
+	
+	 if (!roomId) {
+	   alert("roomId가 없습니다. URL에 roomId를 포함해 주세요.");
+	   throw new Error("Missing roomId");
+	 }
+	
+	 const wsProtocol = (location.protocol === "https:") ? "wss" : "ws";
+	 const contextPath = "<%= request.getContextPath() %>";
+	 const wsUrl = wsProtocol + "://" + location.host + contextPath + "/game/multi/ws?roomId=" + encodeURIComponent(roomId);
+	
+	 const ws = new WebSocket(wsUrl);
+	
+	 /* emojiChatMulti.js에서 사용 */
+	 window.singleWs = ws;
+	 window.contextPath = contextPath;
+	 window.roomId = roomId;
+	
+	 ws.onopen = () => log("서버에 연결되었습니다. 매칭을 기다립니다...");
+	 ws.onmessage = (e) => handle(JSON.parse(e.data));
+	 ws.onerror = (e) => console.error("WebSocket error", e);
+	 ws.onclose = () => {
+	   log("연결이 종료되었습니다.");
+	   statusDiv.innerText = "연결 끊김";
+	 };
+	
+	function idxToCard(idx){
+	  // 현재 멀티 원본 기준 매핑: 0->p1, 1->p3, 2->p4, 3->p2
+	  const map = {0:"p1", 1:"p3", 2:"p4", 3:"p2"};
+	  return document.getElementById(map[idx]);
+	}
+  
+  	function isMyTeam(idx){
+	  // 현재 로직 그대로: 짝/홀 팀
+	  return (idx % 2) === (myIdx % 2);
+	}
+	
+	function setCuteAvatarsAndTeamBadge(){
+	  const myTeamBadge = document.getElementById("myTeamBadge");
+	  const opTeamBadge = document.getElementById("opTeamBadge");
+	
+	  // 팀 배지(헤더) - 내 팀이 흑/백인지
+	  if (myColor === 1) {
+	    myTeamBadge.className = "badge black";
+	    myTeamBadge.innerText = "흑팀";
+	    opTeamBadge.className = "badge white";
+	    opTeamBadge.innerText = "백팀";
+	  } else {
+	    myTeamBadge.className = "badge white";
+	    myTeamBadge.innerText = "백팀";
+	    opTeamBadge.className = "badge black";
+	    opTeamBadge.innerText = "흑팀";
+	  }
+	
+	  // 귀여운 이모지 세트 (원하면 바꿔도 됨)
+	  const blackSet = ["🐻‍❄️", "🐼"];   // 흑팀 느낌
+	  const whiteSet = ["🐰", "🐱"];     // 백팀 느낌
+	
+	  // 내 팀이 흑인지 백인지에 따라 세트 결정
+	  const mySet = (myColor === 1) ? blackSet : whiteSet;
+	  const opSet = (myColor === 1) ? whiteSet : blackSet;
+	
+	  // 팀원 2명 / 상대 2명 인덱스 계산
+	  const myTeamIdxs = [0,1,2,3].filter(i => (i % 2) === (myIdx % 2));
+	  const opTeamIdxs = [0,1,2,3].filter(i => (i % 2) !== (myIdx % 2));
+	
+	  // 내 팀 카드 2개에 이모지
+	  myTeamIdxs.forEach((idx, k) => {
+	    const card = idxToCard(idx);
+	    if (!card) return;
+	    card.classList.remove("team-white","team-black");
+	    card.classList.add(myColor === 1 ? "team-black" : "team-white");
+	
+	    const profile = card.querySelector(".profile");
+	    if (profile) profile.textContent = mySet[k % mySet.length];
+	  });
+	
+	  // 상대 팀 카드 2개에 이모지
+	  opTeamIdxs.forEach((idx, k) => {
+	    const card = idxToCard(idx);
+	    if (!card) return;
+	    card.classList.remove("team-white","team-black");
+	    card.classList.add(myColor === 1 ? "team-white" : "team-black");
+	
+	    const profile = card.querySelector(".profile");
+	    if (profile) profile.textContent = opSet[k % opSet.length];
+	  });
+	}
+	
+  function moveCards(myIdx){
+	const enemyTop = document.getElementById("opTopSlot");       
+	const enemyBot = document.getElementById("opBottomSlot"); 
+	const allyTop  = document.getElementById("allyTopSlot");
+	const mySlotEl = document.getElementById("mySlot");
+	if(!enemyTop || !enemyBot || !allyTop || !mySlotEl) return;
+	
+	const myCard = idxToCard(myIdx);
+	if (myCard) mySlotEl.appendChild(myCard);
+	
+	// 팀 판단(일단 짝/홀 팀)
+	const allyIdx = [0,1,2,3].find(i => i !== myIdx && (i % 2) === (myIdx % 2));
+	const enemyIdxs = [0,1,2,3].filter(i => (i % 2) !== (myIdx % 2));
+	
+	const allyCard = idxToCard(allyIdx);
+	if (allyCard) allyTop.appendChild(allyCard);
+	
+	const e1 = idxToCard(enemyIdxs[0]);
+	const e2 = idxToCard(enemyIdxs[1]);
+	if (e1) enemyTop.appendChild(e1);
+	if (e2) enemyBot.appendChild(e2);
+  }
+  
+  function setTurn(turnIdx){
+	["p1","p2","p3","p4"].forEach(id => document.getElementById(id)?.classList.remove("turn-active"));
+	const map = {0:"p1", 1:"p3", 2:"p4", 3:"p2"};
+	document.getElementById(map[turnIdx])?.classList.add("turn-active");
+  }
 
   function handle(data) {
     if (data.type === "MULTI_WAIT") {
@@ -190,6 +298,11 @@
       myColor = data.color;
 
       window.mySlot = myIdx; /* 내 슬롯 */
+      
+      moveCards(myIdx);
+      setCuteAvatarsAndTeamBadge();
+
+      
 
       const colorName = (myColor === 1 ? "흑돌(선공)" : "백돌(후공)");
       const displayIdx = myIdx + 1;
@@ -200,6 +313,8 @@
 
     if (data.type === "MULTI_TURN") {
       if (gameOver) return;
+      
+      setTurn(data.turnIdx);
 
       isMyTurn = (data.turnIdx === myIdx);
       startTimer(data.time, data.color);
@@ -257,7 +372,15 @@
       const slot = p.slot;
       const nick = p.nickname;
 
-      const card = document.querySelector(`.player-card[data-slot='${slot}']`);
+   	  // 1) data-slot으로 먼저 찾기
+      let card = document.querySelector(`.player-card[data-slot='${slot}']`);
+
+      // 2) 혹시 못 찾으면 id 매핑으로도 찾기
+      if (!card) {
+        const idMap = {0:"p1", 1:"p3", 2:"p4", 3:"p2"};
+        card = document.getElementById(idMap[slot]);
+      }
+
       if (card) {
         const nameEl = card.querySelector(".name");
         if (nameEl && nick) nameEl.textContent = nick;
@@ -358,9 +481,8 @@
     logDiv.scrollTop = logDiv.scrollHeight;
   }
 </script>
-
-<!-- 단체전 전용 이모지 스크립트 -->
-<script src="<%= request.getContextPath() %>/static/chat/emojiChatMulti.js"></script>
-</div>
+ 
+ <script src="<%= request.getContextPath() %>/static/chat/emojiChatMulti.js"></script>
+ 
 </body>
 </html>

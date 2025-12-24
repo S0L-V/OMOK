@@ -8,16 +8,101 @@
 <style>
 	canvas { border: 1px solid black; background-color: #e3c986; }
 </style>
+<link rel="stylesheet" href="/resources/css/omok.css">
 </head>
 <body>
-	<h1>오목 게임</h1>
-	<div id="status">대기 중...</div>
-	<canvas id="board" width="450" height="450"></canvas>
-	<div id="log"></div>
-	<div id="timer" style="font-size:20px; font-weight:bold;"></div>
-	<div id="pass" style="font-size:20px; font-weight:bold;"></div>
+	<div class="game-wrap">
+    <h1 class="game-title">1 vs 1 OMOK</h1>
+
+    <div class="status-bar">
+      <div id="status" class="status-text">대기 중...</div>
+      <div class="chips">
+        <div id="timer" class="chip">-</div>
+        <div id="pass" class="chip">-</div>
+      </div>
+    </div>
+
+    <div class="game-grid">
+
+	  <!-- LEFT: 상대(여기에 #p2가 들어감) -->
+	  <section class="card turn-ring" id="leftPanel">
+	    <div class="card-header">
+	      <div class="card-title">상대</div>
+	      <span id="opStoneBadge" class="badge">-</span>
+	    </div>
+	    <div class="card-body">
+	      <div id="opProfileSlot"></div>
+	    </div>
+	  </section>
 	
-	<button onclick="giveUp()" style="margin-top:10px; padding: 5px 10px;">기권하기</button>
+	  <!-- CENTER: 보드 + 로그 -->
+	  <section class="card board-card">
+	    <div class="card-header">
+	      <div class="card-title">오목판</div>
+	      <button class="btn btn-danger" onclick="giveUp()">기권하기</button>
+	    </div>
+	
+	    <!-- ✅ board-card .card-body가 flex-center라서, 캔버스만 둬야 css랑 딱 맞음 -->
+	    <div class="card-body">
+	      <canvas id="board" width="450" height="450"></canvas>
+	    </div>
+	
+	    <div class="card-body log-body">
+	      <div class="card-title log-title">로그</div>
+	      <div id="log" class="log"></div>
+	    </div>
+	  </section>
+	
+	  <!-- RIGHT: 나(여기에 #p1 + 이모지 버튼들이 들어감) -->
+	  <section class="card turn-ring" id="rightPanel">
+	    <div class="card-header">
+	      <div class="card-title">나</div>
+	      <span id="myStoneBadge" class="badge">-</span>
+	    </div>
+	    <div class="card-body">
+	      <div id="myProfileSlot"></div>
+	      <div id="myEmojiButtonsSlot" style="margin-top:10px;"></div>
+	      <div id="myEmojiStatusSlot" style="margin-top:10px;"></div>
+	    </div>
+	  </section>
+	
+	</div>
+
+    <!-- ✅ 프로필/이모지 영역은 지금 단계에서 건드리지 않는다 -->
+    <%@ include file="/WEB-INF/views/chat/gameEmoji.jsp" %>
+  </div>
+  <script>
+	document.addEventListener("DOMContentLoaded", () => {
+	  const p1 = document.getElementById("p1"); // 내 프로필(기존)
+	  const p2 = document.getElementById("p2"); // 상대 프로필(기존)
+	
+	  const btns = document.querySelector(".emoji-buttons"); // 🙂😡👏 버튼 묶음
+	  const status = document.getElementById("emoji-ws-status"); // 상태
+	
+	  const leftSlot  = document.getElementById("opProfileSlot");
+	  const rightSlot = document.getElementById("myProfileSlot");
+	  const btnSlot   = document.getElementById("myEmojiButtonsSlot");
+	  const stSlot    = document.getElementById("myEmojiStatusSlot");
+	
+	  if (!p1 || !p2 || !leftSlot || !rightSlot) {
+	    console.warn("이모지 프로필 이동 실패", { p1, p2, leftSlot, rightSlot });
+	    return;
+	  }
+	
+	  // ✅ 프로필 이동
+	  leftSlot.appendChild(p1);     // 상대 → 왼쪽
+	  rightSlot.appendChild(p2);    // 나 → 오른쪽
+	
+	  // ✅ 버튼/상태도 같이 이동 (이걸 안 하면 네가 누르는 버튼이 '죽은 쪽'일 수 있음)
+	  if (btns && btnSlot) btnSlot.appendChild(btns);
+	  if (status && stSlot) stSlot.appendChild(status);
+	
+	  // ✅ 껍데기 wrapper가 남아 공간 차지하면 숨김(단, 버튼/상태 이동 후!)
+	  const wrap = document.querySelector(".emoji-game-wrap");
+	  if (wrap) wrap.style.display = "none";
+	});
+	</script>
+  
 	<script>
  	 	window.loginUserId = "<%= (String)session.getAttribute("loginUserId") %>";
  	 	window.loginNickname = "<%= (String)session.getAttribute("loginNickname") %>";
@@ -36,6 +121,9 @@
 	let gameOver = false;
 	let remainsec = 0;
 	let timer = null;
+	
+	const myStoneBadge = document.getElementById("myStoneBadge"); 
+	const opStoneBadge = document.getElementById("opStoneBadge");
 	
 	drawBoard();
 	
@@ -94,6 +182,19 @@
 	    if (data.type === "SINGLE_START") {
 	        myColor = data.color;
 	       	window.myColor = myColor; // 전역으로
+	       	
+	       	if (myColor === 1) { 
+	       		myStoneBadge.className = "badge black"; 
+	       		myStoneBadge.innerText = "흑돌"; 
+	       		opStoneBadge.className = "badge white"; 
+	       		opStoneBadge.innerText = "백돌"; 
+	       	} else { 
+	       		myStoneBadge.className = "badge white"; 
+	       		myStoneBadge.innerText = "백돌";
+	       		opStoneBadge.className = "badge black"; 
+	       		opStoneBadge.innerText = "흑돌"; 
+	       	}
+	       	
 	       	if (window.setEmojiNames) window.setEmojiNames();
 	        log(myColor === 1 ? "당신은 흑돌" : "당신은 백돌");
 	        drawBoard();
@@ -109,6 +210,14 @@
    		    } else {
    		        passDiv.style.color = "black";
    		    }
+    		
+    		if (data.color == myColor) { 
+    			statusDiv.innerText = "나의 차례입니다!"; 
+    			statusDiv.style.color = "red"; 
+    		} else { 
+    			statusDiv.innerText = "상대방 차례입니다."; 
+    			statusDiv.style.color = "blue"; 
+    		}
 	    }
 	
 	    if(data.type === "delay") {
@@ -231,6 +340,16 @@
 	    ctx.stroke();
 	}
 	
+	/* 턴 강조 */
+	function setTurnHighlight(turnColor){ // 내 색: myColor 
+		const isMyTurn = (turnColor === myColor); 
+		const p1 = document.getElementById("p1"); // (emojiChat.js 기준) p1=나 
+		const p2 = document.getElementById("p2"); // p2=상대 
+		if (!p1 || !p2) return; 
+		p1.classList.toggle("turn-active", isMyTurn); 
+		p2.classList.toggle("turn-active", !isMyTurn); 
+	}
+	
 	function drawStone(x, y, color) {
 	    ctx.beginPath();
 	    ctx.arc(x * size, y * size, 12, 0, Math.PI * 2);
@@ -245,8 +364,8 @@
 	
 	</script>
 	
-	 <div id="emojiArea"></div>
+<!-- 	 <div id="emojiArea"></div> -->
 
-  <%@ include file="/WEB-INF/views/chat/gameEmoji.jsp" %>
+  <%//@ include file="/WEB-INF/views/chat/gameEmoji.jsp" %>
 </body>
 </html>
