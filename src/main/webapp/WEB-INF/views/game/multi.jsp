@@ -105,6 +105,14 @@
       <div id="emoji-ws-status" class="ws-status">EMOJI: 준비</div>
     </div>
   </div>
+  <!-- ✅ 게임 시작 카운트다운 오버레이 -->
+	<div id="startOverlay" class="start-overlay hidden">
+	  <div class="start-box">
+	    <div id="startColorText" class="start-color">-</div>
+	    <div id="startCount" class="start-count">3</div>
+	    <div class="start-sub">곧 게임이 시작됩니다</div>
+	  </div>
+	</div>
 </div>
 
 <script>
@@ -161,6 +169,9 @@ document.addEventListener("DOMContentLoaded", () => {
 	 let gameOver = false;
 	 let remainsec = 0;
 	 let timer = null;
+	 
+	 let gameLocked = true; // ✅ 카운트다운 끝나기 전까지 잠금
+	 let countdownTimer = null;
 	
 	 drawBoard();
 	
@@ -309,6 +320,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
       log("게임 시작! 당신은 " + colorName + " 팀 소속, " + displayIdx + "번째 순서입니다.");
       statusDiv.innerText = "당신은 " + colorName + " 팀 소속, " + displayIdx + "번째 순서입니다.";
+      
+      runStartCountdown(myColor);
     }
 
     if (data.type === "MULTI_TURN") {
@@ -396,7 +409,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   canvas.addEventListener("click", (e) => {
-    if (ws.readyState !== WebSocket.OPEN || gameOver || !isMyTurn) return;
+	if (ws.readyState !== WebSocket.OPEN || gameOver || gameLocked || !isMyTurn) return;
 
     const rect = canvas.getBoundingClientRect();
     const x = Math.floor((e.clientX - rect.left) / size);
@@ -427,6 +440,58 @@ document.addEventListener("DOMContentLoaded", () => {
         }, 3000);
       });
   }
+
+  function playPop(el){
+	  if (!el) return;
+	  el.classList.remove("pop");
+	  // reflow 강제(애니메이션 재시작용)
+	  void el.offsetWidth;
+	  el.classList.add("pop");
+  }
+
+  function runStartCountdown(color){
+	  const overlay = document.getElementById("startOverlay");
+	  const colorText = document.getElementById("startColorText");
+	  const countEl = document.getElementById("startCount");
+	
+	  if (!overlay || !colorText || !countEl) {
+	    // 오버레이가 없으면 그냥 바로 시작
+	    gameLocked = false;
+	    return;
+	  }
+	
+	  // 색 안내 텍스트
+	  if (color === 1) {
+	    colorText.textContent = "당신은 흑팀입니다 (선공)";
+	    colorText.classList.remove("white");
+	    colorText.classList.add("black");
+	  } else {
+	    colorText.textContent = "당신은 백팀입니다 (후공)";
+	    colorText.classList.remove("black");
+	    colorText.classList.add("white");
+	  }
+	
+	  // 보여주기 + 잠금
+	  overlay.classList.remove("hidden");
+	  gameLocked = true;
+	
+	  let n = 3;
+	  countEl.textContent = n;
+	  playPop(countEl);
+	
+	  clearInterval(countdownTimer);
+	  countdownTimer = setInterval(() => {
+	    n--;
+	    if (n <= 0) {
+	      clearInterval(countdownTimer);
+	      overlay.classList.add("hidden");
+	      gameLocked = false;     // ✅ 여기서부터 게임 시작(턴/클릭 허용)
+	      return;
+	    }
+	    countEl.textContent = n;
+	    playPop(countEl);
+	  }, 1000);
+	}
 
   function startTimer(sec, turnColor) {
     clearInterval(timer);

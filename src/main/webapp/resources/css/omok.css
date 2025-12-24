@@ -66,42 +66,43 @@ h1{
   padding: 14px;
 }
 
-/* ===== 상태/칩 ===== */
+/* ===== 상태바 (싱글/멀티 공통 중앙 정렬) ===== */
 .status-bar{
-  display:flex;
-  align-items:center;
-  justify-content: space-between;
+  display: flex;
+  flex-direction: column;     /* 세로 정렬 */
+  align-items: center;        /* 가운데 */
+  justify-content: center;
   gap: 10px;
-  margin-bottom: 12px;
+  margin-bottom: 16px;
 }
 
+/* 상태 메시지 */
 #status{
-  font-size: 14px;
+  font-size: 18px;            /* 크게 */
   font-weight: 900;
   color:#2563eb;
-  padding: 8px 12px;
+  padding: 10px 18px;
   border-radius: 999px;
-  background: rgba(37,99,235,0.10);
-  border: 1px solid rgba(37,99,235,0.18);
+  background: rgba(37,99,235,0.12);
+  border: 1px solid rgba(37,99,235,0.25);
+  text-align: center;
 }
 
+/* timer / pass 칩 */
 .chips{
-  display:flex;
-  gap: 8px;
+  display: flex;
+  justify-content: center;    /* 가운데 */
+  gap: 10px;
   flex-wrap: wrap;
-  justify-content: flex-end;
 }
 
 .chip{
-  font-size: 13px;
+  font-size: 16px;            /* 크게 */
   font-weight: 900;
-  padding: 8px 10px;
+  padding: 10px 16px;
   border-radius: 999px;
-  background:#f3f4f6;
-  border: 1px solid #e5e7eb;
-  color:#111827;
-  white-space: nowrap;
 }
+
 
 .chip.danger{
   background: rgba(239,68,68,0.12);
@@ -313,4 +314,62 @@ h1{
 
   font-size: 28px;   /* 26이 작으면 28~32 */
   line-height: 1;
+}
+
+/* ===== 시작 오버레이(멀티 카운트다운) ===== */
+.start-overlay{
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.65); /* 반투명 어두운 배경 */
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  z-index: 9999;
+}
+
+.start-overlay.hidden{ display:none; }
+
+.start-box{
+  width: min(420px, 92vw);
+  border-radius: 18px;
+  padding: 22px 18px;
+  background: rgba(255,255,255,0.92);
+  border: 1px solid rgba(255,255,255,0.55);
+  box-shadow: 0 18px 60px rgba(0,0,0,0.25);
+  text-align:center;
+  backdrop-filter: blur(8px);
+}
+
+.start-color{
+  font-weight: 900;
+  font-size: 18px;
+  margin-bottom: 10px;
+}
+
+.start-color.black{ color:#111827; }
+.start-color.white{ color:#334155; }
+
+.start-count{
+  font-weight: 900;
+  font-size: 72px;
+  line-height: 1;
+  margin: 8px 0 8px;
+}
+
+.start-sub{
+  font-size: 13px;
+  font-weight: 800;
+  color:#475569;
+}
+
+/* ===== 카운트 숫자 팝 애니메이션 ===== */
+@keyframes popCount {
+  0%   { transform: scale(0.92); opacity: 0.65; }
+  40%  { transform: scale(1.10); opacity: 1; }
+  100% { transform: scale(1.00); opacity: 1; }
+}
+
+/* 숫자 바뀔 때마다 class를 다시 붙여서 애니메이션 재생 */
+.start-count.pop{
+  animation: popCount 420ms ease-out;
 }
