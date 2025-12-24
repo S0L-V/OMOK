@@ -1,0 +1,375 @@
+/* ===== 기본 ===== */
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body{
+  margin:0;
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, "Noto Sans KR", Arial, sans-serif;
+  background: #f5f7fb;
+  color:#111827;
+}
+
+h1{
+  margin: 18px 0 12px;
+  font-size: 24px;
+  font-weight: 900;
+  letter-spacing: -0.3px;
+}
+
+/* ===== 레이아웃 ===== */
+.game-wrap{
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 18px 18px 28px;
+}
+
+.game-grid{
+  display: grid;
+  grid-template-columns: 260px 1fr 260px; /* 좌/중앙/우 */
+  gap: 16px;
+  align-items: start;
+}
+
+@media (max-width: 980px){
+  .game-grid{
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ===== 카드 공통 ===== */
+.card{
+  background:#fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  box-shadow:
+    0 10px 30px rgba(17,24,39,0.06),
+    0 1px 0 rgba(17,24,39,0.03);
+  overflow: hidden;
+}
+
+.card-header{
+  padding: 14px 14px 10px;
+  border-bottom: 1px solid #eef2f7;
+  display:flex;
+  align-items:center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.card-title{
+  font-weight: 900;
+  font-size: 14px;
+  color:#0f172a;
+  letter-spacing: -0.2px;
+}
+
+.card-body{
+  padding: 14px;
+}
+
+/* ===== 상태바 (싱글/멀티 공통 중앙 정렬) ===== */
+.status-bar{
+  display: flex;
+  flex-direction: column;     /* 세로 정렬 */
+  align-items: center;        /* 가운데 */
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+/* 상태 메시지 */
+#status{
+  font-size: 18px;            /* 크게 */
+  font-weight: 900;
+  color:#2563eb;
+  padding: 10px 18px;
+  border-radius: 999px;
+  background: rgba(37,99,235,0.12);
+  border: 1px solid rgba(37,99,235,0.25);
+  text-align: center;
+}
+
+/* timer / pass 칩 */
+.chips{
+  display: flex;
+  justify-content: center;    /* 가운데 */
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.chip{
+  font-size: 16px;            /* 크게 */
+  font-weight: 900;
+  padding: 10px 16px;
+  border-radius: 999px;
+}
+
+
+.chip.danger{
+  background: rgba(239,68,68,0.12);
+  border-color: rgba(239,68,68,0.25);
+  color:#b91c1c;
+}
+
+/* ===== 보드 ===== */
+.board-card .card-body{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding: 16px;
+}
+
+#board{
+  border-radius: 14px;
+  border: 1px solid rgba(0,0,0,0.12);
+  box-shadow: inset 0 0 0 2px rgba(255,255,255,0.12);
+  background: #e3c986;
+}
+
+/* ===== 로그 ===== */
+#log{
+  height: 180px;
+  overflow-y: auto;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  background:#fafafa;
+  padding: 10px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+/* ===== 버튼 ===== */
+.btn{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  padding: 10px 12px;
+  border-radius: 12px;
+  font-weight: 900;
+  cursor:pointer;
+  border: 1px solid #e5e7eb;
+  background:#fff;
+  color:#111827;
+  transition: transform 0.05s ease, filter 0.15s ease;
+}
+.btn:hover{ filter: brightness(0.98); }
+.btn:active{ transform: translateY(1px); }
+
+.btn-danger{
+  background:#111827;
+  border-color:#111827;
+  color:#fff;
+}
+
+/* ===== 플레이어 카드 ===== */
+.player{
+  display:flex;
+  gap: 12px;
+  align-items:center;
+}
+
+.avatar{
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size: 22px;
+  font-weight: 900;
+  background:#f3f4f6;
+  border: 1px solid #e5e7eb;
+}
+
+.player-meta{
+  display:flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.player-name{
+  font-weight: 900;
+  font-size: 14px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.player-sub{
+  font-size: 12px;
+  font-weight: 800;
+  color:#6b7280;
+}
+
+.badge{
+  font-size: 12px;
+  font-weight: 900;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid #e5e7eb;
+  background:#f9fafb;
+  color:#111827;
+}
+
+/* 돌 색 뱃지 */
+.badge.black{
+  background: rgba(17,24,39,0.08);
+  border-color: rgba(17,24,39,0.18);
+}
+.badge.white{
+  background: rgba(255,255,255,0.9);
+  border-color: rgba(17,24,39,0.18);
+}
+
+/* ===== 턴 강조(핵심) ===== */
+.turn-active{
+  border-color: rgba(37,99,235,0.45) !important;
+  box-shadow:
+    0 16px 40px rgba(37,99,235,0.18),
+    0 1px 0 rgba(17,24,39,0.03) !important;
+}
+
+.turn-ring{
+  position: relative;
+}
+.turn-ring::after{
+  content:"";
+  position:absolute;
+  inset: -2px;
+  border-radius: 18px;
+  border: 2px solid rgba(37,99,235,0.55);
+  pointer-events:none;
+}
+
+/* ===== 이모티콘 채팅 영역 ===== */
+.chat-box{
+  display:flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+#emojiArea{
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  background:#fafafa;
+  padding: 10px;
+  height: 220px;
+  overflow-y: auto;
+}
+
+/* (선택) 이모티콘 입력 UI가 gameEmoji.jsp 안에 있다면 부모 폭 맞추기 */
+#emojiArea * { max-width: 100%; }
+
+@keyframes turnWiggle {
+  0%   { transform: translateX(0) rotate(0deg); }
+  20%  { transform: translateX(-1px) rotate(-0.4deg); }
+  40%  { transform: translateX(1px)  rotate(0.4deg); }
+  60%  { transform: translateX(-1px) rotate(-0.4deg); }
+  80%  { transform: translateX(1px)  rotate(0.4deg); }
+  100% { transform: translateX(0) rotate(0deg); }
+}
+
+#p1.turn-active, #p2.turn-active, #p3.turn-active, #p4.turn-active{
+  outline: 2px solid rgba(37,99,235,0.55);
+  box-shadow: 0 16px 40px rgba(37,99,235,0.18);
+  border-radius: 16px;
+  animation: turnWiggle 0.55s ease-in-out infinite;
+}
+
+/* ===== 멀티 카드 프로필(이모지) : 원 크기에 맞게 꽉 ===== */
+.player-card .profile{
+  width: 44px;               /* 필요하면 48px로 키워도 됨 */
+  height: 44px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  font-size: 26px;           /* 이게 핵심: 이모지 크기 */
+  line-height: 1;            /* 위/아래 뜨는 현상 방지 */
+  overflow: hidden;
+
+  background: #f3f4f6;       /* 기본 배경 */
+  border: 1px solid #e5e7eb;
+}
+
+/* 팀 느낌(선택) - 배경만 살짝 */
+.player-card.team-black .profile{
+  background: rgba(17,24,39,0.10);
+  border-color: rgba(17,24,39,0.18);
+}
+.player-card.team-white .profile{
+  background: rgba(255,255,255,0.95);
+  border-color: rgba(17,24,39,0.18);
+}
+
+/* 멀티 카드(#p1~#p4) 프로필 이모지 강제 */
+#p1 .profile, #p2 .profile, #p3 .profile, #p4 .profile{
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+
+  font-size: 28px;   /* 26이 작으면 28~32 */
+  line-height: 1;
+}
+
+/* ===== 시작 오버레이(멀티 카운트다운) ===== */
+.start-overlay{
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.65); /* 반투명 어두운 배경 */
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  z-index: 9999;
+}
+
+.start-overlay.hidden{ display:none; }
+
+.start-box{
+  width: min(420px, 92vw);
+  border-radius: 18px;
+  padding: 22px 18px;
+  background: rgba(255,255,255,0.92);
+  border: 1px solid rgba(255,255,255,0.55);
+  box-shadow: 0 18px 60px rgba(0,0,0,0.25);
+  text-align:center;
+  backdrop-filter: blur(8px);
+}
+
+.start-color{
+  font-weight: 900;
+  font-size: 18px;
+  margin-bottom: 10px;
+}
+
+.start-color.black{ color:#111827; }
+.start-color.white{ color:#334155; }
+
+.start-count{
+  font-weight: 900;
+  font-size: 72px;
+  line-height: 1;
+  margin: 8px 0 8px;
+}
+
+.start-sub{
+  font-size: 13px;
+  font-weight: 800;
+  color:#475569;
+}
+
+/* ===== 카운트 숫자 팝 애니메이션 ===== */
+@keyframes popCount {
+  0%   { transform: scale(0.92); opacity: 0.65; }
+  40%  { transform: scale(1.10); opacity: 1; }
+  100% { transform: scale(1.00); opacity: 1; }
+}
+
+/* 숫자 바뀔 때마다 class를 다시 붙여서 애니메이션 재생 */
+.start-count.pop{
+  animation: popCount 420ms ease-out;
+}
