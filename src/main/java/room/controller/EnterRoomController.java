@@ -45,23 +45,24 @@ public class EnterRoomController extends HttpServlet {
 			String roomId = request.getParameter("roomId");
 			String playType = request.getParameter("playType");
 			String roomPwd = request.getParameter("roomPwd");
-			boolean isPrivate = roomDAO.isPrivateRoom(roomId);
-			String hostUserId = roomDAO.findHostUserIdByRoomId(roomId);
 
 			if (roomId == null || roomId.isBlank() || playType == null || playType.isBlank()) {
 				response.sendRedirect(ctx + "/lobby?error=missing_room_info");
 				return;
 			}
 
-			HttpSession session = request.getSession(false);
+			boolean isPrivate = roomDAO.isPrivateRoom(roomId);
+			String hostUserId = roomDAO.findHostUserIdByRoomId(roomId);
 
+			HttpSession session = request.getSession(false);
 			String userId = (session == null) ? null : (String)session.getAttribute("loginUserId");
-			boolean isHost = userId.equals(hostUserId);
 
 			if (userId == null || userId.isBlank()) {
 				response.sendRedirect(ctx + "/lobby?error=enter_failed");
 				return;
 			}
+
+			boolean isHost = userId.equals(hostUserId);
 
 			if (isPrivate && !isHost) {
 				if (roomPwd == null || roomPwd.isBlank()) {

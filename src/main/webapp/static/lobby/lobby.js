@@ -129,7 +129,7 @@
 	    return;
 	  }
 	
-	  let pwdInput = form.querySelector("input[name='password']");
+	  let pwdInput = form.querySelector("input[name='roomPwd']");
 	  if (!pwdInput) {
 	    pwdInput = document.createElement("input");
 	    pwdInput.type = "hidden";

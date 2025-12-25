@@ -45,7 +45,7 @@ public interface RoomDAO {
 	boolean matchRoomPassword(String roomId, String inputPwd) throws Exception;
 
 	/**
-	 * 방이 비공개방(비밀번호가 설정된 방)인지 여부 조
+	 * 방이 비공개방(비밀번호가 설정된 방)인지 여부 조회
 	 *
 	 * @param roomId 조회할 방 ID
 	 */
