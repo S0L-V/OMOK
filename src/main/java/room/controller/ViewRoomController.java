@@ -1,6 +1,8 @@
 package room.controller;
 
 import java.io.IOException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
@@ -28,6 +30,15 @@ public class ViewRoomController extends HttpServlet {
 
 			if (playType == null || roomId == null || session == null) {
 				response.sendRedirect("/lobby");
+				return;
+			}
+
+			boolean isPrivate = roomDAO.isPrivateRoom(roomId);
+			Boolean isRoomAuthed = (Boolean)session.getAttribute("ROOM_AUTH_" + roomId);
+
+			if (isPrivate && (isRoomAuthed == null || !isRoomAuthed)) {
+				response.sendRedirect("/room/enter?roomId=" + URLEncoder.encode(roomId, StandardCharsets.UTF_8)
+					+ "&playType=" + URLEncoder.encode(playType, StandardCharsets.UTF_8));
 				return;
 			}
 

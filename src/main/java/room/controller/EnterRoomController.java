@@ -27,6 +27,17 @@ public class EnterRoomController extends HttpServlet {
 	@Override
 	protected void doPost(HttpServletRequest request, HttpServletResponse response)
 		throws ServletException, IOException {
+		handler(request, response);
+	}
+
+	@Override
+	protected void doGet(HttpServletRequest request, HttpServletResponse response)
+		throws ServletException, IOException {
+		handler(request, response);
+	}
+
+	protected void handler(HttpServletRequest request, HttpServletResponse response)
+		throws ServletException, IOException {
 
 		String ctx = request.getContextPath();
 
@@ -34,9 +45,8 @@ public class EnterRoomController extends HttpServlet {
 			String roomId = request.getParameter("roomId");
 			String playType = request.getParameter("playType");
 			String roomPwd = request.getParameter("roomPwd");
-			String isPublic = request.getParameter("isPublic");
-
-			System.out.println("isPublic: " + isPublic);
+			boolean isPrivate = roomDAO.isPrivateRoom(roomId);
+			String hostUserId = roomDAO.findHostUserIdByRoomId(roomId);
 
 			if (roomId == null || roomId.isBlank() || playType == null || playType.isBlank()) {
 				response.sendRedirect(ctx + "/lobby?error=missing_room_info");
@@ -44,13 +54,16 @@ public class EnterRoomController extends HttpServlet {
 			}
 
 			HttpSession session = request.getSession(false);
+
 			String userId = (session == null) ? null : (String)session.getAttribute("loginUserId");
+			boolean isHost = userId.equals(hostUserId);
+
 			if (userId == null || userId.isBlank()) {
 				response.sendRedirect(ctx + "/lobby?error=enter_failed");
 				return;
 			}
 
-			if ("private".equals(isPublic)) {
+			if (isPrivate && !isHost) {
 				if (roomPwd == null || roomPwd.isBlank()) {
 					response.sendRedirect(ctx + "/lobby?error=need_password");
 					return;
@@ -60,6 +73,7 @@ public class EnterRoomController extends HttpServlet {
 					response.sendRedirect(ctx + "/lobby?error=wrong_password");
 					return;
 				}
+				session.setAttribute("ROOM_AUTH_" + roomId, true);
 			}
 
 			roomPlayerDao.enterIfAbsent(roomId, userId);

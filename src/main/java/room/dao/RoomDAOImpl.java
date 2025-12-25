@@ -214,6 +214,30 @@ public class RoomDAOImpl implements RoomDAO {
 		}
 	}
 
+	@Override
+	public boolean isPrivateRoom(String roomId) throws Exception {
+
+		String query = """
+			SELECT COUNT(*)
+			FROM room
+			WHERE id = ?
+			  AND room_pwd IS NOT NULL
+			""";
+
+		try (Connection conn = DB.getConnection();
+			PreparedStatement pstmt = conn.prepareStatement(query)) {
+
+			pstmt.setString(1, roomId);
+
+			try (ResultSet rs = pstmt.executeQuery()) {
+				if (rs.next()) {
+					return rs.getInt(1) > 0;
+				}
+				return false;
+			}
+		}
+	}
+
 	private RoomDTO mapToRoom(ResultSet rs) throws SQLException {
 		return RoomDTO.builder()
 			.id(rs.getString("id"))
