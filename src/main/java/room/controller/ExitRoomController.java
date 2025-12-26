@@ -32,6 +32,7 @@ public class ExitRoomController extends HttpServlet {
 
 		try {
 			roomService.exitAndHandleHost(roomId, userId);
+			session.removeAttribute("ROOM_AUTH_" + roomId);
 			System.out.println("[EXIT] ctx=" + request.getContextPath() + " roomId=" + roomId + " userId=" + userId);
 			LobbyWebSocket.broadcastRoomList();
 			response.sendRedirect(ctx + "/lobby");

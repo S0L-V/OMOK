@@ -79,10 +79,11 @@
   function toRowHtml(r) {
     const roomId = r.id ?? "";
     const roomName = r.roomName ?? "-";
-    const isPublic = (String(r.isPublic) === "1") ? "공개" : "비공개 🔒";
+    const isPublic = (String(r.isPublic) === "0") ?  "공개" : "비공개 🔒";
     const playType = (String(r.playType) === "0") ? "개인전" : "팀전";
     const current = r.currentUserCnt ?? 0;
     const total = r.totalUserCnt ?? 0;
+    const isPublicId = (String(r.isPublic) === "0") ? "public" : "private";
     
 
     const disabledAttr = IS_LOGIN ? "" : "disabled";
@@ -98,12 +99,48 @@
           <form class="enter-room-form" action="${CTX}/room/enter"" method="post">
             <input type="hidden" name="playType" value="${escapeHtml(r.playType)}" />	
 			<input type="hidden" name="roomId" value="${escapeHtml(roomId)}" />	
+			<input type="hidden" name="isPublic" value="${escapeHtml(isPublicId)}" />
             <button type="submit" ${disabledAttr} ${titleAttr}>입장</button>
           </form>
         </td>
       </tr>
     `;
   }
+  
+  document.addEventListener("submit", function (e) {
+	  const form = e.target;
+	
+	  if (!(form instanceof HTMLFormElement)) return;
+	  if (!form.classList.contains("enter-room-form")) return;
+	
+	  const isPublicEl = form.querySelector("input[name='isPublic']");
+	  const isPublic = isPublicEl ? isPublicEl.value : "public";
+	
+	  if (isPublic === "public") return;
+	
+	  e.preventDefault();
+	
+	  const pwd = prompt("비밀번호를 입력하세요");
+	  if (pwd === null) return; // 취소
+	
+	  const trimmed = pwd.trim();
+	  if (!trimmed) {
+	    alert("비밀번호를 입력해주세요.");
+	    return;
+	  }
+	
+	  let pwdInput = form.querySelector("input[name='roomPwd']");
+	  if (!pwdInput) {
+	    pwdInput = document.createElement("input");
+	    pwdInput.type = "hidden";
+	    pwdInput.name = "roomPwd";
+	    form.appendChild(pwdInput);
+	  }
+	  pwdInput.value = trimmed;
+	
+	  form.submit();
+	});
+
 
   function escapeHtml(str) {
     return String(str)

@@ -1,6 +1,8 @@
 package room.controller;
 
 import java.io.IOException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
@@ -21,13 +23,24 @@ public class ViewRoomController extends HttpServlet {
 	protected void doGet(HttpServletRequest request, HttpServletResponse response)
 		throws ServletException, IOException {
 
+		String ctx = request.getContextPath();
+
 		try {
 			String roomId = request.getParameter("roomId");
 			String playType = request.getParameter("playType");
 			HttpSession session = request.getSession(false);
 
 			if (playType == null || roomId == null || session == null) {
-				response.sendRedirect("/lobby");
+				response.sendRedirect(ctx + "/lobby");
+				return;
+			}
+
+			boolean isPrivate = roomDAO.isPrivateRoom(roomId);
+			Boolean isRoomAuthed = (Boolean)session.getAttribute("ROOM_AUTH_" + roomId);
+
+			if (isPrivate && (isRoomAuthed == null || !isRoomAuthed)) {
+				response.sendRedirect(ctx + "/room/enter?roomId=" + URLEncoder.encode(roomId, StandardCharsets.UTF_8)
+					+ "&playType=" + URLEncoder.encode(playType, StandardCharsets.UTF_8));
 				return;
 			}
 
@@ -38,7 +51,7 @@ public class ViewRoomController extends HttpServlet {
 			String hostUserId = roomDAO.findHostUserIdByRoomId(roomId);
 
 			if (hostUserId == null) {
-				response.sendRedirect("/lobby?error=host_not_found");
+				response.sendRedirect(ctx + "/lobby?error=host_not_found");
 				return;
 			}
 
